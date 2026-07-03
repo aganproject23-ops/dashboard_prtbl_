@@ -3027,7 +3027,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
       var av=iSort.key==='produk'?a.produk:(a[iSort.key]||0),bv=iSort.key==='produk'?b.produk:(b[iSort.key]||0);
       if(av<bv)return iSort.dir==='asc'?-1:1;if(av>bv)return iSort.dir==='asc'?1:-1;return 0;
     });
-    iApp.innerHTML=iRenderHeader()+iRenderFilter()+iRenderKPIs(agg.totals)+iRenderChart(agg.months)+iRenderAnalysis(agg)+iRenderTable(prods,agg.totals)+iRenderSalesSection();
+    iApp.innerHTML=iRenderHeader()+iRenderFilter()+iRenderKPIs(agg.totals)+iRenderChart(agg.months)+iRenderAnalysis(agg)+iRenderStokBulanan()+iRenderTable(prods,agg.totals)+iRenderSalesSection();
     iAttachEvents();
     iDrawChart(agg.months);
     iDrawSalesChart();
@@ -3083,6 +3083,113 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
         '<p><b>Gross Profit</b>: '+iFmtF(t.gp)+' &nbsp;<span style="font-weight:700;color:'+(t.gp_pct>=35?'#2e9e4e':'#c0392b')+'">('+t.gp_pct.toFixed(1)+'%)</span></p>'+
         '<p style="font-size:11.5px;color:#8a7e6e;">GP = Revenue &minus; HPP Keluar (COGS)</p>'+
       '</div></div></div>';
+  }
+
+  function iRenderStokBulanan(){
+    var INV   = JSON.parse(document.getElementById('inventory-data').textContent);
+    var months= INV.monthly;                          // Jan–Jun 2026
+    var prods = INV.prodTable;
+    var STOK_AWAL_TOTAL = 2449; // stok sebelum Jan 2026 (dihitung dari prodTable net)
+
+    // Rolling saldo per bulan
+    var saldo = STOK_AWAL_TOTAL;
+    var hpp_stok = 0; // HPP stok awal (nilai kasar: stok awal × avg hpp)
+    // avg hpp unit dari prodTable
+    var avgHpp = INV.summary.total_hpp_in / INV.summary.total_qty_in || 0;
+    var hpp_saldo = Math.round(STOK_AWAL_TOTAL * avgHpp);
+
+    var MN_LABEL = {
+      '2026-01':'Januari','2026-02':'Februari','2026-03':'Maret',
+      '2026-04':'April','2026-05':'Mei','2026-06':'Juni'
+    };
+
+    function iF(n){n=Math.round(n||0);if(n>=1e9)return 'Rp'+(n/1e9).toFixed(2)+' M';if(n>=1e6)return 'Rp'+(n/1e6).toFixed(1)+' Jt';return 'Rp'+n.toLocaleString('id-ID');}
+    function iN(n){return Math.round(n||0).toLocaleString('id-ID');}
+
+    var rows = months.map(function(m){
+      var saldo_awal     = saldo;
+      var hpp_saldo_awal = hpp_saldo;
+      var net            = m.qty_in - m.qty_out + m.qty_retur;
+      var saldo_akhir    = saldo_awal + net;
+      var hpp_saldo_akhir= hpp_saldo_awal + m.hpp_in - m.hpp_out;
+      var hpp_unit_avg   = saldo_akhir > 0 ? Math.round(hpp_saldo_akhir / saldo_akhir) : 0;
+
+      // Pergerakan dominan bulan ini
+      var isRestockBesar = m.hpp_in > 150000000;
+      var isOutBesar     = m.qty_out > 1700;
+
+      saldo     = saldo_akhir;
+      hpp_saldo = hpp_saldo_akhir;
+
+      return '<tr>'+
+        '<td style="font-weight:600;">'+iEsc(MN_LABEL[m.ym]||m.ym)+'</td>'+
+        '<td class="num">'+iN(saldo_awal)+'</td>'+
+        '<td class="num" style="color:#5e7fa3;">'+(isRestockBesar?'<span style="font-weight:700;color:#5e7fa3;">':'')+iN(m.qty_in)+(isRestockBesar?'</span>':'')+
+          '<br><span style="font-size:10px;color:#5e7fa3;">'+iF(m.hpp_in)+'</span>'+
+          (isRestockBesar?'<br><span class="inv-badge" style="font-size:9px;background:rgba(94,127,163,0.15);color:#5e7fa3;">RESTOCK BESAR</span>':'')+
+        '</td>'+
+        '<td class="num" style="color:#d96b62;">'+iN(m.qty_out)+
+          '<br><span style="font-size:10px;color:#d96b62;">'+iF(m.hpp_out)+'</span>'+
+          (isOutBesar?'<br><span class="inv-badge" style="font-size:9px;">AKTIF</span>':'')+
+        '</td>'+
+        '<td class="num" style="color:#e67e22;">'+iN(m.qty_retur)+
+          '<br><span style="font-size:10px;color:#8a7e6e;">'+iF(Math.round(m.qty_retur * (m.hpp_out/Math.max(m.qty_out,1))))+'</span>'+
+        '</td>'+
+        '<td class="num" style="'+(net>=0?'color:#2e9e4e;':'color:#c0392b;')+'font-weight:600;">'+(net>=0?'+':'')+iN(net)+'</td>'+
+        '<td class="num" style="font-weight:700;">'+iN(saldo_akhir)+'</td>'+
+        '<td class="num" style="font-weight:700;color:#8b5cf6;">'+iF(hpp_saldo_akhir)+'</td>'+
+        '<td class="num" style="font-size:11px;color:#5a5650;">'+iF(hpp_unit_avg)+'/pcs</td>'+
+      '</tr>';
+    });
+
+    // Totals row
+    var tot_in    = months.reduce(function(s,m){return s+m.qty_in;},0);
+    var tot_out   = months.reduce(function(s,m){return s+m.qty_out;},0);
+    var tot_retur = months.reduce(function(s,m){return s+m.qty_retur;},0);
+    var tot_net   = tot_in - tot_out + tot_retur;
+    var tot_hpp_in = months.reduce(function(s,m){return s+m.hpp_in;},0);
+    var tot_hpp_out= months.reduce(function(s,m){return s+m.hpp_out;},0);
+    var saldo_akhir_total = STOK_AWAL_TOTAL + tot_net;
+
+    var footRow = '<tr style="background:#ede7db;font-weight:700;">'+
+      '<td>TOTAL / AKHIR</td>'+
+      '<td class="num">'+iN(STOK_AWAL_TOTAL)+'<br><span style="font-size:10px;font-weight:400;color:#8a7e6e;">Stok awal Jan</span></td>'+
+      '<td class="num" style="color:#5e7fa3;">'+iN(tot_in)+'<br><span style="font-size:10px;color:#5e7fa3;">'+iF(tot_hpp_in)+'</span></td>'+
+      '<td class="num" style="color:#d96b62;">'+iN(tot_out)+'<br><span style="font-size:10px;color:#d96b62;">'+iF(tot_hpp_out)+'</span></td>'+
+      '<td class="num" style="color:#e67e22;">'+iN(tot_retur)+'</td>'+
+      '<td class="num" style="color:'+(tot_net>=0?'#2e9e4e':'#c0392b')+';">'+(tot_net>=0?'+':'')+iN(tot_net)+'</td>'+
+      '<td class="num">'+iN(saldo_akhir_total)+'<br><span style="font-size:10px;font-weight:400;color:#8a7e6e;">Stok akhir Jun</span></td>'+
+      '<td class="num" style="color:#8b5cf6;">'+iF(hpp_saldo)+'<br><span style="font-size:10px;font-weight:400;color:#8a7e6e;">Nilai HPP stok</span></td>'+
+      '<td class="num"></td>'+
+    '</tr>';
+
+    return '<div style="border-top:2px solid var(--line);margin:28px 0 20px;"></div>'+
+      '<div class="panel"><div class="panel-head">'+
+        '<div>'+
+          '<div class="panel-title">Pergerakan Stok per Bulan</div>'+
+          '<div class="panel-hint">'+
+            'Saldo Awal + IN &minus; OUT + Retur = Saldo Akhir &nbsp;&middot;&nbsp; '+
+            'Nilai HPP dalam (Rp) di bawah qty &nbsp;&middot;&nbsp; '+
+            'HPP/pcs = estimasi avg HPP stok tersisa'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="tbl-scroll"><table>'+
+        '<thead><tr>'+
+          '<th>Bulan</th>'+
+          '<th class="num">Saldo Awal<br><span style="font-weight:400;font-size:10px;">(pcs)</span></th>'+
+          '<th class="num" style="color:#5e7fa3;">IN<br><span style="font-weight:400;font-size:10px;">(pcs / nilai HPP)</span></th>'+
+          '<th class="num" style="color:#d96b62;">OUT<br><span style="font-weight:400;font-size:10px;">(pcs / nilai HPP)</span></th>'+
+          '<th class="num" style="color:#e67e22;">Retur<br><span style="font-weight:400;font-size:10px;">(pcs / nilai HPP)</span></th>'+
+          '<th class="num">Net<br><span style="font-weight:400;font-size:10px;">(pcs)</span></th>'+
+          '<th class="num">Saldo Akhir<br><span style="font-weight:400;font-size:10px;">(pcs)</span></th>'+
+          '<th class="num" style="color:#8b5cf6;">Total HPP Stok<br><span style="font-weight:400;font-size:10px;">(nilai)</span></th>'+
+          '<th class="num">Avg HPP/pcs</th>'+
+        '</tr></thead>'+
+        '<tbody>'+rows.join('')+'</tbody>'+
+        '<tfoot>'+footRow+'</tfoot>'+
+      '</table></div>'+
+    '</div>';
   }
 
   function iRenderTable(prods,totals){
@@ -4674,12 +4781,14 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
       eRenderKPIs() +
       '<div class="chart-dual-grid">' + eRenderSaldoPanel() + eRenderProdukBayarPanel() + '</div>' +
       eRenderInsights() +
+      eRenderKorelasi() +
       eRenderMonthlyTable() +
       eRenderTopEvents() +
       eRenderDailyTable();
 
     eDrawSaldoChart();
     eDrawProdukBayarChart();
+    eDrawKorelChart();
   }
 
   function eRenderHeader(){
@@ -4759,6 +4868,253 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
         '<div class="analysis-block"><h4>Kronologi &amp; Pola</h4><ul class="insight-list">'+ins1+'</ul></div>'+
         '<div class="analysis-block"><h4>Coverage &amp; Proyeksi</h4><ul class="insight-list">'+ins2+'</ul></div>'+
       '</div></div>';
+  }
+
+  function eRenderKorelasi(){
+    // Data stok HPP per bulan 2026 (rolling, sama logika dgn iRenderStokBulanan)
+    var INV = JSON.parse(document.getElementById('inventory-data').textContent);
+    var STOK_AWAL = 2449;
+    var avgHpp = INV.summary.total_hpp_in / INV.summary.total_qty_in;
+    var hpp_saldo = Math.round(STOK_AWAL * avgHpp);
+    var saldo_qty = STOK_AWAL;
+
+    var stokBulan = INV.monthly.map(function(m){
+      var hpp_awal = hpp_saldo;
+      var qty_awal = saldo_qty;
+      var hpp_akhir = hpp_awal + m.hpp_in - m.hpp_out;
+      var qty_akhir = qty_awal + m.qty_in - m.qty_out + m.qty_retur;
+      var hpp_unit = qty_akhir > 0 ? Math.round(hpp_akhir / qty_akhir) : 0;
+      hpp_saldo = hpp_akhir;
+      saldo_qty = qty_akhir;
+      return { ym: m.ym, hpp_stok: hpp_akhir, qty: qty_akhir, hpp_unit: hpp_unit };
+    });
+
+    var es12Bulan = {};
+    ED.monthly.forEach(function(m){ if(m.ym.startsWith('2026')) es12Bulan[m.ym] = m; });
+
+    var MN_FULL2 = {
+      '2026-01':'Jan','2026-02':'Feb','2026-03':'Mar',
+      '2026-04':'Apr','2026-05':'Mei','2026-06':'Jun'
+    };
+
+    // Data titik per bulan untuk chart korelasi
+    var korelData = stokBulan.filter(function(s){ return es12Bulan[s.ym]; }).map(function(s){
+      var e = es12Bulan[s.ym];
+      return {
+        ym: s.ym,
+        hutang: e.saldo_akhir,
+        hpp_stok: s.hpp_stok,
+        qty: s.qty,
+        hpp_unit: s.hpp_unit,
+        gap: s.hpp_stok - e.saldo_akhir,
+        coverage: Math.round(s.hpp_stok / e.saldo_akhir * 100),
+        // Nilai jual estimasi stok (HPP + avg GM 40%)
+        nilai_jual_est: Math.round(s.hpp_stok / (1 - 0.40)),
+        gap_jual: Math.round(s.hpp_stok / (1 - 0.40)) - e.saldo_akhir,
+      };
+    });
+
+    // KPI korelasi
+    var akhir = korelData[korelData.length - 1]; // Jun 2026
+    var best  = korelData.reduce(function(a,b){ return b.coverage > a.coverage ? b : a; });
+    var worst = korelData.reduce(function(a,b){ return b.coverage < a.coverage ? b : a; });
+
+    var kpiHtml = '<div class="kpi-row">'+
+      '<div class="kpi-card"><div class="kpi-label">HPP Stok vs Hutang (Jun 2026)</div>'+
+        '<div class="kpi-value" style="color:#8b5cf6;">'+eFmt(akhir.hpp_stok)+'</div>'+
+        '<div class="kpi-delta down">Cover '+akhir.coverage+'% dari hutang '+eFmt(akhir.hutang)+'</div></div>'+
+      '<div class="kpi-card alt"><div class="kpi-label">Gap HPP Stok &minus; Hutang</div>'+
+        '<div class="kpi-value" style="color:#c0392b;">'+eFmt(akhir.gap)+'</div>'+
+        '<div class="kpi-delta down">Jika stok dijual at-cost, masih kurang</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">Est. Nilai Jual Stok (GM 40%)</div>'+
+        '<div class="kpi-value" style="color:#2e9e4e;">'+eFmt(akhir.nilai_jual_est)+'</div>'+
+        '<div class="kpi-delta up">Surplus '+eFmt(akhir.gap_jual)+' di atas hutang</div></div>'+
+      '<div class="kpi-card alt"><div class="kpi-label">Coverage Terbaik vs Terburuk</div>'+
+        '<div class="kpi-value">'+best.coverage+'% &rarr; '+worst.coverage+'%</div>'+
+        '<div class="kpi-delta" style="color:var(--mute);">'+eEsc(MN_FULL2[best.ym])+' terbaik &middot; '+eEsc(MN_FULL2[worst.ym])+' terburuk</div></div>'+
+    '</div>';
+
+    // Chart: dua garis (hutang vs HPP stok) + area gap
+    var chartHtml = '<div class="panel"><div class="panel-head">'+
+      '<div><div class="panel-title">Hutang ES12 vs Nilai HPP Stok per Bulan</div>'+
+        '<div class="panel-hint">Garis merah = hutang ES12 &middot; Garis ungu = HPP stok inventory &middot; Area = gap</div></div>'+
+      '</div>'+
+      '<div class="chart-wrap"><svg class="chart" id="korel-chart-svg" viewBox="0 0 720 240" preserveAspectRatio="xMidYMid meet"></svg>'+
+        '<div class="tooltip" id="korel-tip"></div></div>'+
+    '</div>';
+
+    // Tabel korelasi
+    var tblRows = korelData.map(function(d){
+      var coverColor = d.coverage >= 80 ? '#2e9e4e' : (d.coverage >= 60 ? '#e67e22' : '#c0392b');
+      var coverBg = d.coverage >= 80 ? 'rgba(46,158,78,0.07)' : (d.coverage >= 60 ? 'rgba(230,126,22,0.07)' : 'rgba(192,57,43,0.07)');
+      return '<tr>'+
+        '<td style="font-weight:600;">'+eEsc(MN_FULL2[d.ym])+' 2026</td>'+
+        '<td class="num" style="color:#c0392b;font-weight:600;">'+eFmtF(d.hutang)+'</td>'+
+        '<td class="num" style="color:#8b5cf6;font-weight:600;">'+eFmtF(d.hpp_stok)+'</td>'+
+        '<td class="num" style="background:'+coverBg+';color:'+coverColor+';font-weight:700;border-radius:4px;">'+d.coverage+'%</td>'+
+        '<td class="num" style="color:#c0392b;">'+eFmtF(d.gap)+'</td>'+
+        '<td class="num" style="color:#2e9e4e;font-weight:600;">'+eFmtF(d.nilai_jual_est)+'</td>'+
+        '<td class="num" style="color:#2e9e4e;">'+eFmtF(d.gap_jual)+'</td>'+
+        '<td class="num" style="color:#5a5650;font-size:11.5px;">'+eFmtF(d.hpp_unit)+'/pcs &middot; '+d.qty.toLocaleString('id-ID')+' pcs</td>'+
+      '</tr>';
+    }).join('');
+
+    var tblHtml = '<div class="panel"><div class="panel-head">'+
+      '<div><div class="panel-title">Tabel Korelasi Hutang vs Stok per Bulan</div>'+
+        '<div class="panel-hint">Coverage = HPP Stok / Hutang &middot; Est. Nilai Jual = HPP ÷ (1 &minus; 40% GM) &middot; Gap Jual = Nilai Jual &minus; Hutang</div></div>'+
+      '</div>'+
+      '<div class="tbl-scroll"><table>'+
+        '<thead><tr>'+
+          '<th>Bulan</th>'+
+          '<th class="num" style="color:#c0392b;">Hutang ES12</th>'+
+          '<th class="num" style="color:#8b5cf6;">HPP Stok</th>'+
+          '<th class="num">Coverage</th>'+
+          '<th class="num">Gap (HPP&minus;Hutang)</th>'+
+          '<th class="num" style="color:#2e9e4e;">Est. Nilai Jual Stok</th>'+
+          '<th class="num" style="color:#2e9e4e;">Gap Jual</th>'+
+          '<th class="num">Stok Detail</th>'+
+        '</tr></thead>'+
+        '<tbody>'+tblRows+'</tbody>'+
+      '</table></div></div>';
+
+    // Narasi findings
+    var findings = [
+      {
+        icon:'⚠️', color:'#c0392b', bg:'rgba(192,57,43,0.06)', border:'#e8a0a0',
+        title:'HPP Stok selalu lebih kecil dari Hutang ES12',
+        body:'Sepanjang Jan–Jun 2026, nilai HPP stok inventory <b>tidak pernah mampu menutup</b> hutang ES12. '+
+          'Coverage terendah di <b>Januari (27.6%)</b> — hutang Rp425.7 Jt tapi HPP stok hanya Rp117.6 Jt. '+
+          'Ini berarti jika PRTBL harus melunasi hutang ES12 dengan menjual semua stok <i>at-cost</i>, akan selalu defisit. '+
+          'Defisit terkecil terjadi di <b>Juni (gap Rp143.4 Jt)</b> setelah restock besar April membangun stok.'
+      },
+      {
+        icon:'📦', color:'#8b5cf6', bg:'rgba(139,92,246,0.06)', border:'#c4a8f0',
+        title:'Restock April 2026 mengangkat coverage dari 45% → 74%',
+        body:'Sebelum restock besar April (Rp344 Jt dari ES12), coverage HPP/Hutang hanya <b>44.9%</b> di Maret. '+
+          'Setelah restock, stok melonjak dari 3.049 pcs → 7.837 pcs dan HPP stok naik ke Rp395.9 Jt, '+
+          'sehingga coverage meningkat ke <b>73.7%</b>. Ini paradoks: mengambil lebih banyak barang dari ES12 '+
+          'justru memperbaiki rasio coverage karena nilai stok naik lebih cepat dari hutangnya.'
+      },
+      {
+        icon:'💰', color:'#2e9e4e', bg:'rgba(46,158,78,0.06)', border:'#82c896',
+        title:'Dengan nilai jual (bukan HPP), stok sudah surplus di atas hutang',
+        body:'Jika stok dijual pada harga normal (asumsi Gross Margin 40%), estimasi nilai jual stok Juni = '+
+          '<b>Rp860.5 Jt</b> — surplus <b>Rp200.7 Jt</b> di atas hutang ES12 Rp659.8 Jt. '+
+          'Artinya: PRTBL secara teknis <b>mampu melunasi hutang ES12 dari penjualan stok yang ada</b>, '+
+          'asalkan stok berhasil terjual semua. Ini adalah safety buffer yang penting untuk dilihat.'
+      },
+      {
+        icon:'📉', color:'#e67e22', bg:'rgba(230,126,22,0.06)', border:'#f0c070',
+        title:'Tren coverage membaik tapi hutang terus naik — risiko struktural',
+        body:'Coverage naik dari 27.6% (Jan) → 78.3% (Jun) karena akumulasi stok. Namun angka absolut hutang '+
+          'juga terus naik: Rp425.7 Jt → Rp659.8 Jt (+55%). Pola ini menunjukkan bahwa <b>PRTBL menggunakan '+
+          'ES12 sebagai sumber modal kerja (stok = utang)</b>. Selama stok bisa terjual dengan margin sehat, '+
+          'model ini workable. Risikonya: jika penjualan melambat (seperti tren Juni −34%), '+
+          'stok menumpuk dan hutang terus berbunga tanpa cash masuk.'
+      },
+      {
+        icon:'🎯', color:'#5e7fa3', bg:'rgba(94,127,163,0.06)', border:'#a0b8d8',
+        title:'Hubungan ES12 Produk Masuk ≈ Inventory HPP In (korelasi kuat ~97%)',
+        body:'Pembelian produk ke ES12 hampir 1:1 mencerminkan HPP masuk di inventory: '+
+          'Jan (109%), Feb (70%), Mar (117%), Apr (92%), Mei (97%), Jun (107%). '+
+          'Rata-rata <b>99% dari HPP inventory berasal dari ES12</b> — menegaskan bahwa ES12 adalah '+
+          '<b>satu-satunya atau hampir satu-satunya supplier</b> PRTBL. Ketergantungan ini membuat '+
+          'posisi negosiasi hutang sangat krusial: jika ES12 menghentikan kredit, operasional berhenti.'
+      },
+    ];
+
+    var findingCards = findings.map(function(f){
+      return '<div style="background:'+f.bg+';border:1px solid '+f.border+';border-radius:8px;padding:14px 16px;margin-bottom:12px;">'+
+        '<div style="font-weight:700;color:'+f.color+';margin-bottom:6px;font-size:13.5px;">'+f.icon+' '+f.title+'</div>'+
+        '<div style="font-size:13px;color:#3e3028;line-height:1.7;">'+f.body+'</div>'+
+      '</div>';
+    }).join('');
+
+    var narasiHtml = '<div class="panel analysis-panel">'+
+      '<div class="panel-head"><div class="panel-title">Narasi: Korelasi Sisa Hutang ES12 vs Nilai HPP Stok</div></div>'+
+      '<div>'+findingCards+'</div>'+
+    '</div>';
+
+    return '<div style="border-top:2px solid var(--line);margin:28px 0 20px;"></div>'+
+      '<div class="tag-header" style="margin-bottom:18px;">'+
+        '<div class="tag-left"><div>'+
+          '<div class="tag-title">Analisis Korelasi Hutang &times; Stok</div>'+
+          '<div class="tag-sub">Seberapa besar nilai stok PRTBL menutup hutang ke ES12?</div>'+
+        '</div></div>'+
+        '<div class="tag-meta" style="color:#8b5cf6;font-weight:700;">Coverage '+akhir.coverage+'%</div>'+
+      '</div>'+
+      kpiHtml + chartHtml + narasiHtml + tblHtml;
+  }
+
+  function eDrawKorelChart(){
+    var svg = document.getElementById('korel-chart-svg');
+    if(!svg) return;
+    var INV = JSON.parse(document.getElementById('inventory-data').textContent);
+    var STOK_AWAL = 2449;
+    var avgHpp = INV.summary.total_hpp_in / INV.summary.total_qty_in;
+    var hpp_saldo = Math.round(STOK_AWAL * avgHpp);
+    var saldo_qty = STOK_AWAL;
+
+    var stokBulan = INV.monthly.map(function(m){
+      var hpp_akhir = hpp_saldo + m.hpp_in - m.hpp_out;
+      var qty_akhir = saldo_qty + m.qty_in - m.qty_out + m.qty_retur;
+      hpp_saldo = hpp_akhir; saldo_qty = qty_akhir;
+      return { ym: m.ym, hpp_stok: hpp_akhir };
+    });
+    var es12Bulan = {};
+    ED.monthly.forEach(function(m){ if(m.ym.startsWith('2026')) es12Bulan[m.ym] = m; });
+    var data = stokBulan.filter(function(s){ return es12Bulan[s.ym]; }).map(function(s){
+      return { ym: s.ym, hutang: es12Bulan[s.ym].saldo_akhir, hpp_stok: s.hpp_stok };
+    });
+
+    var W=720,H=240,pL=80,pR=14,pT=20,pB=36,plW=W-pL-pR,plH=H-pT-pB;
+    var n = data.length;
+    function xFor(i){ return n>1 ? pL+i*(plW/(n-1)) : pL+plW/2; }
+
+    var allV = data.map(function(d){ return Math.max(d.hutang,d.hpp_stok); });
+    var maxV = Math.max.apply(null,allV)*1.12;
+    var minV = Math.min.apply(null,data.map(function(d){ return Math.min(d.hutang,d.hpp_stok); }))*0.88;
+    var range = maxV-minV||1;
+    function yFor(v){ return pT+plH-((v-minV)/range*plH); }
+
+    var grid='',glbl='';
+    for(var g=0;g<=4;g++){
+      var gv=minV+(maxV-minV)*g/4, gy=yFor(gv);
+      grid+='<line class="grid-line" x1="'+pL+'" y1="'+gy+'" x2="'+(W-pR)+'" y2="'+gy+'"/>';
+      glbl+='<text class="axis-label" x="'+(pL-6)+'" y="'+(gy+3)+'" text-anchor="end">'+eFmt(gv)+'</text>';
+    }
+
+    // Area gap (fill antara dua garis)
+    var areaTop = data.map(function(d,i){ return xFor(i)+','+yFor(d.hutang); }).join(' ');
+    var areaBot = data.map(function(d,i){ return xFor(n-1-i)+','+yFor(data[n-1-i].hpp_stok); }).join(' ');
+    var areaPath = 'M'+xFor(0)+','+yFor(data[0].hutang)+' '+data.map(function(d,i){ return 'L'+xFor(i)+','+yFor(d.hutang); }).join(' ')+
+      ' '+data.slice().reverse().map(function(d,i){ return 'L'+xFor(n-1-i)+','+yFor(d.hpp_stok); }).join(' ')+' Z';
+
+    var hutangPts = data.map(function(d,i){ return [xFor(i),yFor(d.hutang)]; });
+    var stokPts   = data.map(function(d,i){ return [xFor(i),yFor(d.hpp_stok)]; });
+
+    var MN_SH = {'2026-01':'Jan','2026-02':'Feb','2026-03':'Mar','2026-04':'Apr','2026-05':'Mei','2026-06':'Jun'};
+    var xlbl = data.map(function(d,i){
+      return '<text class="axis-label" x="'+xFor(i)+'" y="'+(H-pB+14)+'" text-anchor="middle">'+eEsc(MN_SH[d.ym]||d.ym)+'</text>';
+    }).join('');
+
+    var legend = '<text x="'+(pL+12)+'" y="'+(pT-4)+'" font-size="9" font-family="var(--font-mono)" fill="#c0392b">&#x2015; Hutang ES12</text>'+
+      '<text x="'+(pL+110)+'" y="'+(pT-4)+'" font-size="9" font-family="var(--font-mono)" fill="#8b5cf6">&#x2015; HPP Stok</text>'+
+      '<text x="'+(pL+210)+'" y="'+(pT-4)+'" font-size="9" font-family="var(--font-mono)" fill="rgba(192,57,43,0.4)">&#x25A0; Gap (kurang)</text>';
+
+    svg.innerHTML = grid+glbl+
+      '<path d="'+areaPath+'" fill="rgba(192,57,43,0.10)"/>'+
+      '<path d="'+eSmooth(hutangPts)+'" fill="none" stroke="#c0392b" stroke-width="2.5"/>'+
+      '<path d="'+eSmooth(stokPts)+'" fill="none" stroke="#8b5cf6" stroke-width="2.5"/>'+
+      hutangPts.map(function(pt,i){
+        return '<circle cx="'+pt[0]+'" cy="'+pt[1]+'" r="4" fill="#c0392b" stroke="#f8f3ec" stroke-width="1.5"/>'+
+          '<text x="'+pt[0]+'" y="'+(pt[1]-8)+'" text-anchor="middle" font-size="8.5" font-family="var(--font-mono)" fill="#c0392b">'+eFmt(data[i].hutang)+'</text>';
+      }).join('')+
+      stokPts.map(function(pt,i){
+        return '<circle cx="'+pt[0]+'" cy="'+pt[1]+'" r="4" fill="#8b5cf6" stroke="#f8f3ec" stroke-width="1.5"/>'+
+          '<text x="'+pt[0]+'" y="'+(pt[1]+18)+'" text-anchor="middle" font-size="8.5" font-family="var(--font-mono)" fill="#8b5cf6">'+eFmt(data[i].hpp_stok)+'</text>';
+      }).join('')+
+      xlbl+legend;
   }
 
   function eRenderMonthlyTable(){
