@@ -4359,7 +4359,8 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
       '<div class="chart-dual-grid">' + pRenderWaterfallPanel() + pRenderTrendPanel() + '</div>' +
       pRenderPLTable() +
       pRenderOpexBreakdown() +
-      pRenderInsights();
+      pRenderInsights() +
+      pRenderMarketAnalysis();
     pDrawWaterfall();
     pDrawTrend();
   }
@@ -4525,6 +4526,121 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
       '</div>'+
       '<div style="padding:4px 0;">'+bars+'</div>'+
     '</div>';
+  }
+
+  function pRenderMarketAnalysis(){
+    // Diagnosis cards
+    var diagCards = [
+      {
+        no:'1', color:'#c0392b', bg:'rgba(192,57,43,0.06)', border:'#e8a0a0',
+        title:'Margin math tidak menang di TikTok',
+        body:'AOV PRTBL Rp99.073, tepat di zona produk fashion &lt;Rp150 ribu yang kena kenaikan komisi 0.5&ndash;1.5% + biaya logistik baru Rp950/order + biaya penanganan (berlaku Juni 2026). '+
+          'Estimasi beban baru: &plusmn;Rp17 Jt/tahun tambahan masuk ke P&amp;L yang sudah rugi Rp177 Jt. '+
+          '<b>Setiap order TikTok di bawah Rp150 ribu sekarang struktural lebih tipis marginnya 3&ndash;7 poin.</b>'
+      },
+      {
+        no:'2', color:'#8b3a8b', bg:'rgba(139,58,139,0.06)', border:'#d8a0d0',
+        title:'Penurunan Juni &minus;34% bersifat algoritmik, bukan musiman',
+        body:'TikTok Shop resmi mengubah 7 aturan besar sejak Jan&ndash;Feb 2026: Creator Health Rating (CHR), pembatasan konten non-interaktif, blokir distribusi FYP untuk pelanggar. '+
+          'Timeline cocok dengan penurunan PRTBL: Mar &minus;5.8%, Mei &minus;21.2%, Jun &minus;34.1%. CTOR campaign PRTBL justru naik (1.02%&rarr;1.80%) tapi volume anjlok &mdash; '+
+          '<b>gejala klasik reach dipotong algoritma, bukan produk ditolak pasar.</b>'
+      },
+      {
+        no:'3', color:'#e67e22', bg:'rgba(230,126,22,0.06)', border:'#f0c070',
+        title:'Modal kerja terkunci di stok yang salah',
+        body:'Stok 10.177 pcs = 6 bulan sell-through, tapi komposisinya timpang: sejumlah SKU Racing Series (KLX, Ninja Kuning/Biru/Hijau) '+
+          'punya cover 40&ndash;578 bulan &mdash; nyaris tidak bergerak. Estimasi &plusmn;Rp75&ndash;100 Jt HPP membeku, sementara hutang ES12 Rp652 Jt terus naik &plusmn;Rp17 Jt/bulan.'
+      },
+    ];
+
+    var diagHtml = diagCards.map(function(d){
+      return '<div style="background:'+d.bg+';border:1px solid '+d.border+';border-radius:8px;padding:14px 16px;margin-bottom:12px;">'+
+        '<div style="display:flex;align-items:flex-start;gap:10px;">'+
+          '<div style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:'+d.color+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">'+d.no+'</div>'+
+          '<div>'+
+            '<div style="font-weight:700;color:'+d.color+';margin-bottom:5px;font-size:13.5px;">'+d.title+'</div>'+
+            '<div style="font-size:13px;color:#3e3028;line-height:1.7;">'+d.body+'</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+
+    // Prioritized actions
+    function actionCard(prio, timeframe, title, color, items){
+      var itemsHtml = items.map(function(it){ return '<li>'+it+'</li>'; }).join('');
+      return '<div class="panel" style="border-left:4px solid '+color+';margin-bottom:14px;">'+
+        '<div class="panel-head"><div>'+
+          '<div class="panel-title" style="color:'+color+';">Prioritas '+prio+' &middot; '+timeframe+'</div>'+
+          '<div class="panel-hint" style="font-weight:600;color:#3e3028;font-size:13px;">'+title+'</div>'+
+        '</div></div>'+
+        '<ul class="insight-list" style="padding:0 20px 14px;">'+itemsHtml+'</ul>'+
+      '</div>';
+    }
+
+    var actionsHtml =
+      actionCard('1','Bulan ini','Selamatkan distribusi TikTok (sumber 84% revenue)', '#c0392b', [
+        '<b>Audit skor CHR sekarang</b> di Seller Center &rarr; Creator Health Rating. Zona kuning/merah = penjelasan langsung penurunan Juni.',
+        '<b>Pindah format ke live streaming</b> &mdash; live commerce = 20% GMV online, konversi 3x katalog. Mulai 5 sesi/minggu, 60&ndash;90 menit, dari produk hero (HadPoloCap Hitam).',
+        '<b>Hitung ulang harga per SKU</b> dengan Fee Calculator terbaru. SKU margin &lt;10% &rarr; naikkan harga 10&ndash;15% atau bundel 2 topi untuk keluar dari AOV &lt;Rp150rb.',
+      ]) +
+      actionCard('2','1&ndash;2 bulan','Dorong Shopee dari 13% &rarr; 25% kontribusi', '#2e9e4e', [
+        'Satu-satunya channel yang tumbuh (+26.5%) dengan AOV lebih tinggi (Rp111.802 vs Rp99.073) dan pola pembelian lebih stabil.',
+        'Alokasikan sebagian budget iklan TikTok ke Shopee Ads. Target Rp40 Jt/bulan (dari Rp22.9 Jt) &mdash; menutup ~40% penurunan TikTok Juni.',
+        'Aktifkan flash sale &amp; gratis ongkir Shopee &mdash; mekanisme familiar, tidak butuh beban konten seberat TikTok.',
+      ]) +
+      actionCard('3','1&ndash;3 bulan','Cairkan stok mati &rarr; bayar ES12', '#e67e22', [
+        'Identifikasi SKU cover &gt;24 bulan &rarr; flash sale agresif 40&ndash;50% off. Target cairkan Rp50&ndash;75 Jt kas.',
+        'Kas hasil clearance langsung ke pembayaran ES12 &mdash; turunkan saldo hutang sekaligus perbaiki coverage ratio (saat ini 78%).',
+        '<b>Stop restock SKU Ninja/KLX series</b> sampai cover turun di bawah 6 bulan &mdash; alokasi restock April sebagian salah sasaran.',
+      ]) +
+      actionCard('4','3&ndash;6 bulan','Masuk segmen custom &mdash; tren terbesar 2026 yang belum disentuh', '#5e7fa3', [
+        'Topi custom diprediksi jadi item wajib 2026 (clean look, personalisasi). PRTBL sudah punya kapasitas bordir.',
+        'Mulai B2B kecil: komunitas motor (basis Racing Series sudah ada), sekolah (School Series SD/SMP sudah laku 322 pcs). Min order 12&ndash;24 pcs, harga premium 20&ndash;30%.',
+        'Custom order tidak lewat komisi marketplace penuh, AOV lebih tinggi, tidak tergantung algoritma.',
+      ]);
+
+    // Impact table
+    var impactRows = [
+      ['Bundling + repricing TikTok (AOV +30%)', '+Rp40&ndash;60 Jt margin'],
+      ['Shopee 13% &rarr; 25%', '+Rp50&ndash;70 Jt revenue baru'],
+      ['Clearance stok mati', '+Rp50&ndash;75 Jt kas (one-off)'],
+      ['Custom B2B (mulai kecil)', '+Rp20&ndash;40 Jt margin premium'],
+    ].map(function(r){
+      return '<tr><td style="font-size:13px;">'+r[0]+'</td><td class="num" style="font-weight:700;color:#2e9e4e;">'+r[1]+'</td></tr>';
+    }).join('');
+
+    var impactHtml = '<div class="panel" style="background:#fff8e7;border:1px solid #f0c040;">'+
+      '<div class="panel-head"><div class="panel-title">Estimasi Dampak per 6 Bulan</div></div>'+
+      '<div class="tbl-scroll"><table>'+
+        '<thead><tr><th>Aksi</th><th class="num">Estimasi Dampak</th></tr></thead>'+
+        '<tbody>'+impactRows+'</tbody>'+
+      '</table></div>'+
+      '<div style="padding:12px 16px 4px;font-size:13px;color:#5a4000;line-height:1.7;">'+
+        'Break-even PRTBL butuh menutup gap OPEX vs Gross Margin sebesar <b>~Rp180 Jt/6 bulan</b>. '+
+        'Tidak ada satu pun aksi di atas yang butuh modal besar &mdash; semuanya realokasi dari apa yang sudah ada. '+
+        '<b style="color:#c0392b;">Paling mendesak: audit CHR dan mulai live streaming minggu ini</b> &mdash; setiap bulan penundaan berpotensi memangkas lagi distribusi organik di channel yang menopang 84% bisnis.'+
+      '</div>'+
+    '</div>';
+
+    return '<div style="border-top:2px solid var(--line);margin:28px 0 20px;"></div>'+
+      '<div class="tag-header" style="margin-bottom:18px;">'+
+        '<div class="tag-left"><div>'+
+          '<div class="tag-title">Kondisi Pasar &amp; Korelasi dengan PRTBL</div>'+
+          '<div class="tag-sub">Diagnosis struktural &middot; bukan sekadar pasar lesu, tapi kehilangan pangsa di pasar yang tumbuh</div>'+
+        '</div></div>'+
+        '<div class="tag-meta" style="color:#c0392b;font-weight:700;">Aksi Prioritas</div>'+
+      '</div>'+
+      '<div class="panel"><div style="font-size:13.5px;color:#3e3028;line-height:1.75;padding:2px 0 10px;">'+
+        'Pasar topi online Indonesia <b>tidak sedang turun</b> &mdash; baseball cap justru query terpopuler dengan lonjakan Februari 2026, aksesori kepala naik penggunaannya di usia 20&ndash;40 tahun. '+
+        'Tapi penjualan PRTBL turun &minus;14.5% (Jan&rarr;Jun). Artinya <b style="color:#c0392b;">PRTBL kehilangan pangsa di pasar yang justru tumbuh</b> &mdash; ini lebih berbahaya dari pasar lesu, karena kompetitor sedang mengambil porsi PRTBL.'+
+      '</div></div>'+
+      '<div class="panel analysis-panel">'+
+        '<div class="panel-head"><div class="panel-title">Diagnosis: 3 Akar Masalah yang Saling Menguatkan</div></div>'+
+        '<div>'+diagHtml+'</div>'+
+      '</div>'+
+      '<div style="margin:20px 0 8px;"><div class="tag-title" style="font-size:16px;">Apa yang Harus Dilakukan</div></div>'+
+      actionsHtml +
+      impactHtml;
   }
 
   function pRenderInsights(){
