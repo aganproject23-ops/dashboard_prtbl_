@@ -2872,7 +2872,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
         var parts = m.ym.split('-');
         tip.innerHTML = '<div class="t-date">'+S_MONTH_NAMES_FULL[parseInt(parts[1])-1]+' '+parts[0]+'</div>'+
           '<div class="t-row"><span style="color:#2e9e4e">Operasional</span><span>'+sFmtIDR(m.op)+'</span></div>'+
-          '<div class="t-row"><span style="color:#e67e22">Belum Dikat.</span><span>'+sFmtIDR(m.unc)+'</span></div>'+
+          '<div class="t-row"><span style="color:#b8621a">Belum Dikat.</span><span>'+sFmtIDR(m.unc)+'</span></div>'+
           '<div class="t-row"><span>Net CF</span><span style="font-weight:700;color:'+(m.op+m.unc>=0?'#2e9e4e':'#c0392b')+'">'+sFmtIDR(m.op+m.unc)+'</span></div>';
         var rect = wrap.getBoundingClientRect();
         var tx = e.clientX-rect.left+12, ty = e.clientY-rect.top-10;
@@ -3027,7 +3027,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
       var av=iSort.key==='produk'?a.produk:(a[iSort.key]||0),bv=iSort.key==='produk'?b.produk:(b[iSort.key]||0);
       if(av<bv)return iSort.dir==='asc'?-1:1;if(av>bv)return iSort.dir==='asc'?1:-1;return 0;
     });
-    iApp.innerHTML=iRenderHeader()+iRenderFilter()+iRenderKPIs(agg.totals)+iRenderChart(agg.months)+iRenderAnalysis(agg)+iRenderStokBulanan()+iRenderTable(prods,agg.totals)+iRenderSalesSection();
+    iApp.innerHTML=iRenderHeader()+iRenderFilter()+iRenderKPIs(agg.totals)+iRenderChart(agg.months)+iRenderAnalysis(agg)+iRenderStokBulanan()+iRenderTable(prods,agg.totals)+iRenderDeadStock()+iRenderSalesSection();
     iAttachEvents();
     iDrawChart(agg.months);
     iDrawSalesChart();
@@ -3132,7 +3132,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
           '<br><span style="font-size:10px;color:#d96b62;">'+iF(m.hpp_out)+'</span>'+
           (isOutBesar?'<br><span class="inv-badge" style="font-size:9px;">AKTIF</span>':'')+
         '</td>'+
-        '<td class="num" style="color:#e67e22;">'+iN(m.qty_retur)+
+        '<td class="num" style="color:#b8621a;">'+iN(m.qty_retur)+
           '<br><span style="font-size:10px;color:#8a7e6e;">'+iF(Math.round(m.qty_retur * (m.hpp_out/Math.max(m.qty_out,1))))+'</span>'+
         '</td>'+
         '<td class="num" style="'+(net>=0?'color:#2e9e4e;':'color:#c0392b;')+'font-weight:600;">'+(net>=0?'+':'')+iN(net)+'</td>'+
@@ -3156,7 +3156,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
       '<td class="num">'+iN(STOK_AWAL_TOTAL)+'<br><span style="font-size:10px;font-weight:400;color:#8a7e6e;">Stok awal Jan</span></td>'+
       '<td class="num" style="color:#5e7fa3;">'+iN(tot_in)+'<br><span style="font-size:10px;color:#5e7fa3;">'+iF(tot_hpp_in)+'</span></td>'+
       '<td class="num" style="color:#d96b62;">'+iN(tot_out)+'<br><span style="font-size:10px;color:#d96b62;">'+iF(tot_hpp_out)+'</span></td>'+
-      '<td class="num" style="color:#e67e22;">'+iN(tot_retur)+'</td>'+
+      '<td class="num" style="color:#b8621a;">'+iN(tot_retur)+'</td>'+
       '<td class="num" style="color:'+(tot_net>=0?'#2e9e4e':'#c0392b')+';">'+(tot_net>=0?'+':'')+iN(tot_net)+'</td>'+
       '<td class="num">'+iN(saldo_akhir_total)+'<br><span style="font-size:10px;font-weight:400;color:#8a7e6e;">Stok akhir Jun</span></td>'+
       '<td class="num" style="color:#8b5cf6;">'+iF(hpp_saldo)+'<br><span style="font-size:10px;font-weight:400;color:#8a7e6e;">Nilai HPP stok</span></td>'+
@@ -3180,7 +3180,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
           '<th class="num">Saldo Awal<br><span style="font-weight:400;font-size:10px;">(pcs)</span></th>'+
           '<th class="num" style="color:#5e7fa3;">IN<br><span style="font-weight:400;font-size:10px;">(pcs / nilai HPP)</span></th>'+
           '<th class="num" style="color:#d96b62;">OUT<br><span style="font-weight:400;font-size:10px;">(pcs / nilai HPP)</span></th>'+
-          '<th class="num" style="color:#e67e22;">Retur<br><span style="font-weight:400;font-size:10px;">(pcs / nilai HPP)</span></th>'+
+          '<th class="num" style="color:#b8621a;">Retur<br><span style="font-weight:400;font-size:10px;">(pcs / nilai HPP)</span></th>'+
           '<th class="num">Net<br><span style="font-weight:400;font-size:10px;">(pcs)</span></th>'+
           '<th class="num">Saldo Akhir<br><span style="font-weight:400;font-size:10px;">(pcs)</span></th>'+
           '<th class="num" style="color:#8b5cf6;">Total HPP Stok<br><span style="font-weight:400;font-size:10px;">(nilai)</span></th>'+
@@ -3190,6 +3190,148 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
         '<tfoot>'+footRow+'</tfoot>'+
       '</table></div>'+
     '</div>';
+  }
+
+  function iRenderDeadStock(){
+    var INV = JSON.parse(document.getElementById('inventory-data').textContent);
+    var prods = INV.prodTable;
+
+    function iF(n){n=Math.round(n||0);if(n>=1e9)return 'Rp'+(n/1e9).toFixed(2)+' M';if(n>=1e6)return 'Rp'+(n/1e6).toFixed(1)+' Jt';return 'Rp'+n.toLocaleString('id-ID');}
+    function iN(n){return Math.round(n||0).toLocaleString('id-ID');}
+    function iCover(p){ return p.qty_out>0 ? (p.qty_stok/(p.qty_out/6)) : Infinity; }
+
+    var withStok = prods.filter(function(p){ return p.qty_stok > 0; });
+    var deadStock  = withStok.filter(function(p){ return p.qty_out===0; });
+    var slowMoving = withStok.filter(function(p){ return p.qty_out>0 && iCover(p)>12; });
+    var healthy    = withStok.filter(function(p){ return p.qty_out>0 && iCover(p)<=12 && iCover(p)>=2; });
+    var fastMoving = withStok.filter(function(p){ return p.qty_out>0 && iCover(p)<2; });
+
+    deadStock.sort(function(a,b){ return b.qty_stok*b.hpp_unit - a.qty_stok*a.hpp_unit; });
+    slowMoving.sort(function(a,b){ return iCover(b)-iCover(a); });
+
+    var totalHppStok = withStok.reduce(function(s,p){ return s+p.qty_stok*p.hpp_unit; },0);
+    var deadHpp  = deadStock.reduce(function(s,p){ return s+p.qty_stok*p.hpp_unit; },0);
+    var slowHpp  = slowMoving.reduce(function(s,p){ return s+p.qty_stok*p.hpp_unit; },0);
+    var healthyHpp = healthy.reduce(function(s,p){ return s+p.qty_stok*p.hpp_unit; },0);
+    var fastHpp  = fastMoving.reduce(function(s,p){ return s+p.qty_stok*p.hpp_unit; },0);
+    var riskyPct = (deadHpp+slowHpp)/totalHppStok*100;
+
+    // KPI cards
+    var kpiHtml = '<div class="kpi-row">'+
+      '<div class="kpi-card"><div class="kpi-label">Dead Stock (Tidak Pernah Laku)</div>'+
+        '<div class="kpi-value" style="color:#c0392b;">'+iF(deadHpp)+'</div>'+
+        '<div class="kpi-delta down">'+deadStock.length+' produk &middot; 0 unit terjual 6 bulan</div></div>'+
+      '<div class="kpi-card alt"><div class="kpi-label">Slow Moving (Cover &gt;12 Bulan)</div>'+
+        '<div class="kpi-value" style="color:#b8621a;">'+iF(slowHpp)+'</div>'+
+        '<div class="kpi-delta down">'+slowMoving.length+' produk &middot; '+(slowHpp/totalHppStok*100).toFixed(1)+'% dari total stok</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">Stok Sehat (Cover 2&ndash;12 Bulan)</div>'+
+        '<div class="kpi-value" style="color:#2e9e4e;">'+iF(healthyHpp)+'</div>'+
+        '<div class="kpi-delta up">'+healthy.length+' produk &middot; perputaran wajar</div></div>'+
+      '<div class="kpi-card alt"><div class="kpi-label">Risiko Stockout (Cover &lt;2 Bulan)</div>'+
+        '<div class="kpi-value" style="color:#5e7fa3;">'+iF(fastHpp)+'</div>'+
+        '<div class="kpi-delta" style="color:var(--mute);">'+fastMoving.length+' produk &middot; laris, perlu restock</div></div>'+
+    '</div>';
+
+    // Warning banner
+    var warnHtml = '<div class="panel" style="background:rgba(192,57,43,0.05);border:1px solid #e8a0a0;">'+
+      '<div style="font-size:13.5px;color:#7a2a20;line-height:1.75;">'+
+        '<b style="color:#c0392b;">&#9888; '+riskyPct.toFixed(0)+'% dari nilai stok (Rp'+iN(deadHpp+slowHpp)+')</b> tergolong Dead Stock atau Slow Moving (cover &gt;12 bulan). '+
+        'Modal kerja ini <b>membeku</b> sementara hutang ES12 terus bertambah bunga berjalan. '+
+        'Rekomendasi: clearance sale agresif untuk kategori ini, dan hentikan restock SKU sejenis sampai perputaran membaik.'+
+      '</div></div>';
+
+    // Distribusi bar
+    var distHtml = '<div class="panel"><div class="panel-head">'+
+        '<div><div class="panel-title">Distribusi Nilai Stok berdasarkan Kecepatan Perputaran</div>'+
+          '<div class="panel-hint">Total nilai HPP stok: '+iF(totalHppStok)+'</div></div>'+
+      '</div>'+
+      '<div style="padding:4px 0;">'+
+        [
+          {label:'Dead Stock (0 unit terjual)', val:deadHpp, n:deadStock.length, color:'#c0392b'},
+          {label:'Slow Moving (cover >12 bulan)', val:slowHpp, n:slowMoving.length, color:'#b8621a'},
+          {label:'Sehat (cover 2-12 bulan)', val:healthyHpp, n:healthy.length, color:'#2e9e4e'},
+          {label:'Fast Moving (cover <2 bulan)', val:fastHpp, n:fastMoving.length, color:'#5e7fa3'},
+        ].map(function(item){
+          var pct = totalHppStok? (item.val/totalHppStok*100).toFixed(1) : 0;
+          return '<div style="margin-bottom:10px;">'+
+            '<div style="display:flex;justify-content:space-between;margin-bottom:3px;">'+
+              '<span style="font-size:12.5px;color:#3e3028;">'+item.label+' <span style="color:#8a7e6e;">('+item.n+' produk)</span></span>'+
+              '<span style="font-size:12px;font-family:var(--font-mono);color:#3e3028;font-weight:600;">'+iF(item.val)+' ('+pct+'%)</span>'+
+            '</div>'+
+            '<div style="height:12px;background:#ede7db;border-radius:4px;">'+
+              '<div style="height:100%;width:'+pct+'%;background:'+item.color+';border-radius:4px;"></div>'+
+            '</div>'+
+          '</div>';
+        }).join('')+
+      '</div></div>';
+
+    // Tabel Dead Stock
+    var deadRows = deadStock.map(function(p,i){
+      var nilai = p.qty_stok * p.hpp_unit;
+      return '<tr>'+
+        '<td><span class="rank">#'+(i+1)+'</span></td>'+
+        '<td class="inv-name"><div class="prod-name-text">'+iEsc(p.produk)+'</div></td>'+
+        '<td class="num" style="font-weight:600;">'+iN(p.qty_stok)+' pcs</td>'+
+        '<td class="num" style="color:#5a5650;">'+iF(p.hpp_unit)+'/pcs</td>'+
+        '<td class="num" style="font-weight:700;color:#c0392b;">'+iF(nilai)+'</td>'+
+        '<td class="num" style="color:#8a7e6e;">'+iN(p.qty_in)+'</td>'+
+      '</tr>';
+    }).join('');
+
+    var deadTblHtml = '<div class="panel"><div class="panel-head">'+
+      '<div><div class="panel-title">Dead Stock &mdash; Tidak Ada Penjualan Sama Sekali ('+deadStock.length+' produk)</div>'+
+        '<div class="panel-hint">Total nilai terkunci: '+iF(deadHpp)+' &middot; 0 unit terjual sepanjang Jan&ndash;Jun 2026</div></div>'+
+      '</div>'+
+      '<div class="tbl-scroll" style="max-height:360px;"><table>'+
+        '<thead><tr>'+
+          '<th>#</th><th>Produk</th>'+
+          '<th class="num">Stok Saat Ini</th>'+
+          '<th class="num">HPP/pcs</th>'+
+          '<th class="num">Nilai Terkunci</th>'+
+          '<th class="num">Total Pernah Masuk</th>'+
+        '</tr></thead>'+
+        '<tbody>'+deadRows+'</tbody>'+
+      '</table></div></div>';
+
+    // Tabel Slow Moving (top 20)
+    var slowRows = slowMoving.slice(0,20).map(function(p,i){
+      var cov = iCover(p);
+      var nilai = p.qty_stok * p.hpp_unit;
+      var covColor = cov>100 ? '#c0392b' : '#b8621a';
+      return '<tr>'+
+        '<td><span class="rank">#'+(i+1)+'</span></td>'+
+        '<td class="inv-name"><div class="prod-name-text">'+iEsc(p.produk)+'</div></td>'+
+        '<td class="num" style="font-weight:700;color:'+covColor+';">'+iN(Math.round(cov))+' bln</td>'+
+        '<td class="num">'+iN(p.qty_stok)+' pcs</td>'+
+        '<td class="num" style="color:#8a7e6e;">'+iN(p.qty_out)+' / 6bln</td>'+
+        '<td class="num" style="font-weight:600;color:#b8621a;">'+iF(nilai)+'</td>'+
+      '</tr>';
+    }).join('');
+
+    var slowTblHtml = '<div class="panel"><div class="panel-head">'+
+      '<div><div class="panel-title">Slow Moving &mdash; Top 20 Cover Terpanjang ('+slowMoving.length+' produk total)</div>'+
+        '<div class="panel-hint">Cover = Stok &divide; (OUT per bulan) &middot; Total nilai kategori ini: '+iF(slowHpp)+'</div></div>'+
+      '</div>'+
+      '<div class="tbl-scroll" style="max-height:420px;"><table>'+
+        '<thead><tr>'+
+          '<th>#</th><th>Produk</th>'+
+          '<th class="num">Cover Stok</th>'+
+          '<th class="num">Stok Saat Ini</th>'+
+          '<th class="num">Penjualan 6bln</th>'+
+          '<th class="num">Nilai Terkunci</th>'+
+        '</tr></thead>'+
+        '<tbody>'+slowRows+'</tbody>'+
+      '</table></div></div>';
+
+    return '<div style="border-top:2px solid var(--line);margin:28px 0 20px;"></div>'+
+      '<div class="tag-header" style="margin-bottom:18px;">'+
+        '<div class="tag-left"><div>'+
+          '<div class="tag-title">Analisis Dead Stock &amp; Perputaran</div>'+
+          '<div class="tag-sub">Produk mana yang menahan modal kerja tanpa memberi hasil?</div>'+
+        '</div></div>'+
+        '<div class="tag-meta" style="color:#c0392b;font-weight:700;">'+riskyPct.toFixed(0)+'% Berisiko</div>'+
+      '</div>'+
+      kpiHtml + warnHtml + distHtml + deadTblHtml + slowTblHtml;
   }
 
   function iRenderTable(prods,totals){
@@ -3210,7 +3352,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
         '<td class="inv-name"><div class="prod-name-text" title="'+iEsc(p.produk)+'">'+iEsc(iTr(p.produk,48))+'</div>'+(badges?'<div class="inv-badges">'+badges+'</div>':'')+'</td>'+
         '<td class="num" style="color:#2e9e4e;font-weight:600;">'+iFmtN(p.qty_in)+'</td>'+
         '<td class="num" style="color:#c0392b;font-weight:600;">'+iFmtN(p.qty_out)+'</td>'+
-        '<td class="num" style="color:#e67e22;">'+iFmtN(p.qty_retur)+'</td>'+
+        '<td class="num" style="color:#b8621a;">'+iFmtN(p.qty_retur)+'</td>'+
         '<td class="num" style="font-weight:700;color:'+stokColor+'">'+iFmtN(p.qty_stok)+'</td>'+
         '<td class="num">'+iFmtF(p.hpp_in)+'</td>'+
         '<td class="num">'+iFmt(p.hpp_unit)+'/pcs</td>'+
@@ -3228,7 +3370,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
       '<thead><tr><th>#</th><th data-isort="produk">Produk'+arw('produk')+'</th>'+
       '<th class="num" data-isort="qty_in" style="color:#2e9e4e">IN'+arw('qty_in')+'</th>'+
       '<th class="num" data-isort="qty_out" style="color:#c0392b">OUT'+arw('qty_out')+'</th>'+
-      '<th class="num" data-isort="qty_retur" style="color:#e67e22">Retur'+arw('qty_retur')+'</th>'+
+      '<th class="num" data-isort="qty_retur" style="color:#b8621a">Retur'+arw('qty_retur')+'</th>'+
       '<th class="num" data-isort="qty_stok">Stok'+arw('qty_stok')+'</th>'+
       '<th class="num" data-isort="hpp_in">HPP Masuk'+arw('hpp_in')+'</th>'+
       '<th class="num" data-isort="hpp_unit">HPP/pcs'+arw('hpp_unit')+'</th>'+
@@ -3306,7 +3448,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
         tip.innerHTML='<div class="t-date">'+MNF[parseInt(pts[1])-1]+' '+pts[0]+'</div>'+
           '<div class="t-row"><span style="color:#2e9e4e">IN</span><span>'+iFmtN(m.qty_in)+' pcs / '+iFmt(m.hpp_in)+'</span></div>'+
           '<div class="t-row"><span style="color:#c0392b">OUT</span><span>'+iFmtN(m.qty_out)+' pcs / '+iFmt(m.hpp_out)+'</span></div>'+
-          '<div class="t-row"><span style="color:#e67e22">Retur</span><span>'+iFmtN(m.qty_retur)+' pcs</span></div>'+
+          '<div class="t-row"><span style="color:#b8621a">Retur</span><span>'+iFmtN(m.qty_retur)+' pcs</span></div>'+
           '<div class="t-row"><span>Revenue</span><span>'+iFmtF(m.netto_jual)+'</span></div>'+
           '<div class="t-row"><span>Gross Profit</span><span style="font-weight:700;color:'+(m.gp_pct>=35?'#2e9e4e':'#c0392b')+'">'+iFmtF(m.gross_profit)+' ('+m.gp_pct.toFixed(1)+'%)</span></div>';
         var rect=wrap.getBoundingClientRect(),tx=e.clientX-rect.left+14,ty=e.clientY-rect.top-10;
@@ -4546,7 +4688,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
           '<b>gejala klasik reach dipotong algoritma, bukan produk ditolak pasar.</b>'
       },
       {
-        no:'3', color:'#e67e22', bg:'rgba(230,126,22,0.06)', border:'#f0c070',
+        no:'3', color:'#b8621a', bg:'rgba(230,126,22,0.06)', border:'#f0c070',
         title:'Modal kerja terkunci di stok yang salah',
         body:'Stok 10.177 pcs = 6 bulan sell-through, tapi komposisinya timpang: sejumlah SKU Racing Series (KLX, Ninja Kuning/Biru/Hijau) '+
           'punya cover 40&ndash;578 bulan &mdash; nyaris tidak bergerak. Estimasi &plusmn;Rp75&ndash;100 Jt HPP membeku, sementara hutang ES12 Rp652 Jt terus naik &plusmn;Rp17 Jt/bulan.'
@@ -4588,7 +4730,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
         'Alokasikan sebagian budget iklan TikTok ke Shopee Ads. Target Rp40 Jt/bulan (dari Rp22.9 Jt) &mdash; menutup ~40% penurunan TikTok Juni.',
         'Aktifkan flash sale &amp; gratis ongkir Shopee &mdash; mekanisme familiar, tidak butuh beban konten seberat TikTok.',
       ]) +
-      actionCard('3','1&ndash;3 bulan','Cairkan stok mati &rarr; bayar ES12', '#e67e22', [
+      actionCard('3','1&ndash;3 bulan','Cairkan stok mati &rarr; bayar ES12', '#b8621a', [
         'Identifikasi SKU cover &gt;24 bulan &rarr; flash sale agresif 40&ndash;50% off. Target cairkan Rp50&ndash;75 Jt kas.',
         'Kas hasil clearance langsung ke pembayaran ES12 &mdash; turunkan saldo hutang sekaligus perbaiki coverage ratio (saat ini 78%).',
         '<b>Stop restock SKU Ninja/KLX series</b> sampai cover turun di bawah 6 bulan &mdash; alokasi restock April sebagian salah sasaran.',
@@ -4898,6 +5040,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
       '<div class="chart-dual-grid">' + eRenderSaldoPanel() + eRenderProdukBayarPanel() + '</div>' +
       eRenderInsights() +
       eRenderKorelasi() +
+      eRenderRasioBayar() +
       eRenderMonthlyTable() +
       eRenderTopEvents() +
       eRenderDailyTable();
@@ -4905,6 +5048,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
     eDrawSaldoChart();
     eDrawProdukBayarChart();
     eDrawKorelChart();
+    eDrawRasioChart();
   }
 
   function eRenderHeader(){
@@ -5053,7 +5197,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
     // Chart: dua garis (hutang vs HPP stok) + area gap
     var chartHtml = '<div class="panel"><div class="panel-head">'+
       '<div><div class="panel-title">Hutang ES12 vs Nilai HPP Stok per Bulan</div>'+
-        '<div class="panel-hint">Garis merah = hutang ES12 &middot; Garis ungu = HPP stok inventory &middot; Area = gap</div></div>'+
+        '<div class="panel-hint">Garis merah = hutang ES12 &middot; Garis ungu = HPP stok inventory &middot; Area = gap &middot; Kotak % = rasio Nilai Stok/Hutang</div></div>'+
       '</div>'+
       '<div class="chart-wrap"><svg class="chart" id="korel-chart-svg" viewBox="0 0 720 240" preserveAspectRatio="xMidYMid meet"></svg>'+
         '<div class="tooltip" id="korel-tip"></div></div>'+
@@ -5120,7 +5264,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
           'asalkan stok berhasil terjual semua. Ini adalah safety buffer yang penting untuk dilihat.'
       },
       {
-        icon:'📉', color:'#e67e22', bg:'rgba(230,126,22,0.06)', border:'#f0c070',
+        icon:'📉', color:'#b8621a', bg:'rgba(230,126,22,0.06)', border:'#f0c070',
         title:'Tren coverage membaik tapi hutang terus naik — risiko struktural',
         body:'Coverage naik dari 27.6% (Jan) → 78.3% (Jun) karena akumulasi stok. Namun angka absolut hutang '+
           'juga terus naik: Rp425.7 Jt → Rp659.8 Jt (+55%). Pola ini menunjukkan bahwa <b>PRTBL menggunakan '+
@@ -5216,7 +5360,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
 
     var legend = '<text x="'+(pL+12)+'" y="'+(pT-4)+'" font-size="9" font-family="var(--font-mono)" fill="#c0392b">&#x2015; Hutang ES12</text>'+
       '<text x="'+(pL+110)+'" y="'+(pT-4)+'" font-size="9" font-family="var(--font-mono)" fill="#8b5cf6">&#x2015; HPP Stok</text>'+
-      '<text x="'+(pL+210)+'" y="'+(pT-4)+'" font-size="9" font-family="var(--font-mono)" fill="rgba(192,57,43,0.4)">&#x25A0; Gap (kurang)</text>';
+      '<text x="'+(pL+205)+'" y="'+(pT-4)+'" font-size="9" font-family="var(--font-mono)" fill="#3e3028">&#x25A2; Rasio Stok/Hutang</text>';
 
     svg.innerHTML = grid+glbl+
       '<path d="'+areaPath+'" fill="rgba(192,57,43,0.10)"/>'+
@@ -5230,7 +5374,173 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
         return '<circle cx="'+pt[0]+'" cy="'+pt[1]+'" r="4" fill="#8b5cf6" stroke="#f8f3ec" stroke-width="1.5"/>'+
           '<text x="'+pt[0]+'" y="'+(pt[1]+18)+'" text-anchor="middle" font-size="8.5" font-family="var(--font-mono)" fill="#8b5cf6">'+eFmt(data[i].hpp_stok)+'</text>';
       }).join('')+
+      data.map(function(d,i){
+        var ratio = Math.round(d.hpp_stok / d.hutang * 100);
+        var midY = (yFor(d.hutang) + yFor(d.hpp_stok)) / 2;
+        var rColor = ratio>=80?'#2e9e4e':(ratio>=50?'#b8621a':'#c0392b');
+        return '<rect x="'+(xFor(i)-19)+'" y="'+(midY-9)+'" width="38" height="16" rx="4" fill="#f8f3ec" stroke="'+rColor+'" stroke-width="1"/>'+
+          '<text x="'+xFor(i)+'" y="'+(midY+3.5)+'" text-anchor="middle" font-size="9.5" font-weight="700" font-family="var(--font-mono)" fill="'+rColor+'">'+ratio+'%</text>';
+      }).join('')+
       xlbl+legend;
+  }
+
+  function eRenderRasioBayar(){
+    var MN_FULL3 = {
+      '2025-06':'Juni 2025','2025-07':'Juli 2025','2025-08':'Agustus 2025','2025-09':'September 2025',
+      '2025-10':'Oktober 2025','2025-11':'November 2025','2025-12':'Desember 2025',
+      '2026-01':'Januari 2026','2026-02':'Februari 2026','2026-03':'Maret 2026','2026-04':'April 2026',
+      '2026-05':'Mei 2026','2026-06':'Juni 2026','2026-07':'Juli 2026'
+    };
+
+    var data = MN14.map(function(m){
+      var rasio = m.produk > 0 ? (m.bayar / m.produk * 100) : (m.bayar > 0 ? 999 : 0);
+      return { ym: m.ym, produk: m.produk, bayar: m.bayar, rasio: rasio, saldoAkhir: m.saldo_akhir };
+    });
+
+    var validForAvg = data.filter(function(d){ return d.produk > 0; });
+    var avgRasio = validForAvg.reduce(function(s,d){ return s + Math.min(d.rasio,300); },0) / validForAvg.length;
+    var bulanLunas = data.filter(function(d){ return d.rasio >= 100; });
+    var best  = data.reduce(function(a,b){ return b.rasio > a.rasio ? b : a; });
+    var worst = data.filter(function(d){ return d.produk>0; }).reduce(function(a,b){ return b.rasio < a.rasio ? b : a; });
+
+    // KPI
+    var kpiHtml = '<div class="kpi-row">'+
+      '<div class="kpi-card"><div class="kpi-label">Rata-rata Rasio Bayar / Hutang Masuk</div>'+
+        '<div class="kpi-value" style="color:'+(avgRasio>=100?'#2e9e4e':'#c0392b')+';">'+avgRasio.toFixed(0)+'%</div>'+
+        '<div class="kpi-delta" style="color:var(--mute);">&lt;100% = pembelian bulan itu tidak sepenuhnya tercicil di bulan yang sama</div></div>'+
+      '<div class="kpi-card alt"><div class="kpi-label">Bulan Rasio &ge;100% (Lunas Bulan Berjalan)</div>'+
+        '<div class="kpi-value" style="color:#2e9e4e;">'+bulanLunas.length+' / '+data.length+' bulan</div>'+
+        '<div class="kpi-delta up">Pembayaran menyamai atau melebihi pembelian bulan itu</div></div>'+
+      '<div class="kpi-card"><div class="kpi-label">Rasio Terbaik</div>'+
+        '<div class="kpi-value" style="color:#2e9e4e;">'+eEsc(MN_FULL3[best.ym].split(' ')[0])+' '+(best.rasio>=999?'&infin;':best.rasio.toFixed(0)+'%')+'</div>'+
+        '<div class="kpi-delta up">Pembayaran jauh melebihi pembelian bulan itu</div></div>'+
+      '<div class="kpi-card alt"><div class="kpi-label">Rasio Terburuk</div>'+
+        '<div class="kpi-value" style="color:#c0392b;">'+eEsc(MN_FULL3[worst.ym].split(' ')[0])+' '+worst.rasio.toFixed(0)+'%</div>'+
+        '<div class="kpi-delta down">Restock besar tidak diimbangi pembayaran sepadan</div></div>'+
+    '</div>';
+
+    // Chart bar rasio per bulan
+    var chartHtml = '<div class="panel"><div class="panel-head">'+
+      '<div><div class="panel-title">Rasio Pembayaran terhadap Hutang Masuk per Bulan</div>'+
+        '<div class="panel-hint">Rasio = Pembayaran &divide; Produk Masuk bulan itu &middot; Garis putus-putus 100% = titik impas (bayar sama besar dengan hutang baru)</div></div>'+
+      '</div>'+
+      '<div class="chart-wrap"><svg class="chart" id="rasio-chart-svg" viewBox="0 0 720 240" preserveAspectRatio="xMidYMid meet"></svg>'+
+        '<div class="tooltip" id="rasio-tip"></div></div>'+
+    '</div>';
+
+    // Tabel rasio
+    var rows = data.map(function(d){
+      var rColor = d.rasio >= 100 ? '#2e9e4e' : (d.rasio >= 60 ? '#b8621a' : '#c0392b');
+      var rBg = d.rasio >= 100 ? 'rgba(46,158,78,0.08)' : (d.rasio >= 60 ? 'rgba(184,98,26,0.08)' : 'rgba(192,57,43,0.08)');
+      var rasioDisplay = d.rasio >= 999 ? '&infin;' : d.rasio.toFixed(1)+'%';
+      return '<tr>'+
+        '<td style="font-weight:600;">'+eEsc(MN_FULL3[d.ym]||d.ym)+'</td>'+
+        '<td class="num" style="color:#c0392b;font-weight:600;">'+eFmtF(d.produk)+'</td>'+
+        '<td class="num" style="color:#2e9e4e;font-weight:600;">'+eFmtF(d.bayar)+'</td>'+
+        '<td class="num" style="background:'+rBg+';color:'+rColor+';font-weight:700;border-radius:4px;">'+rasioDisplay+'</td>'+
+        '<td class="num" style="font-weight:700;">'+eFmtF(d.saldoAkhir)+'</td>'+
+      '</tr>';
+    }).join('');
+
+    var tblHtml = '<div class="panel"><div class="panel-head">'+
+      '<div><div class="panel-title">Tabel Rasio Pembayaran vs Hutang Masuk per Bulan</div>'+
+        '<div class="panel-hint">Rasio &ge;100% (hijau) = bayar menutup penuh pembelian bulan itu &middot; &lt;60% (merah) = restock jauh lebih besar dari cicilan</div></div>'+
+      '</div>'+
+      '<div class="tbl-scroll"><table>'+
+        '<thead><tr>'+
+          '<th>Bulan</th>'+
+          '<th class="num">Produk Masuk (Hutang Baru)</th>'+
+          '<th class="num">Pembayaran</th>'+
+          '<th class="num">Rasio Bayar/Hutang Masuk</th>'+
+          '<th class="num">Saldo Akhir</th>'+
+        '</tr></thead>'+
+        '<tbody>'+rows+'</tbody>'+
+      '</table></div></div>';
+
+    // Narasi
+    var narasiHtml = '<div class="panel analysis-panel"><div class="panel-head"><div class="panel-title">Interpretasi Rasio Pembayaran</div></div>'+
+      '<ul class="insight-list">'+
+        '<li>Rata-rata rasio pembayaran terhadap hutang masuk adalah <b>'+avgRasio.toFixed(0)+'%</b> &mdash; secara umum PRTBL '+
+          (avgRasio>=100?'mampu menutup pembelian bulan berjalan dengan cicilan bulan yang sama.':'membayar lebih kecil dari pembelian bulan berjalan, sehingga sisa selalu terbawa ke saldo hutang berikutnya.')+
+        '</li>'+
+        '<li><b>'+bulanLunas.length+' dari '+data.length+' bulan</b> memiliki rasio &ge;100% &mdash; termasuk <b>'+eEsc(MN_FULL3[best.ym])+'</b> yang mencatat rasio tertinggi karena pembayaran besar Rp138 Jt pada 16 Maret 2026 sementara pembelian bulan itu relatif kecil (Rp85.9 Jt).</li>'+
+        '<li>Rasio terendah terjadi di <b>'+eEsc(MN_FULL3[worst.ym])+'</b> (<b>'+worst.rasio.toFixed(1)+'%</b>) &mdash; bertepatan dengan restock besar Rp344 Jt, jauh melampaui kapasitas cicilan rutin bulan itu (Rp89.5 Jt).</li>'+
+        '<li>Pola ini menunjukkan pembayaran PRTBL relatif <b>stabil di kisaran Rp77&ndash;100 Jt/bulan</b>, sementara pembelian sangat fluktuatif tergantung kebutuhan restock &mdash; sehingga rasio naik-turun tajam bukan karena PRTBL memperlambat bayar, tapi karena besarnya hutang baru yang masuk bulan itu.</li>'+
+      '</ul></div>';
+
+    return '<div style="border-top:2px solid var(--line);margin:28px 0 20px;"></div>'+
+      '<div class="tag-header" style="margin-bottom:18px;">'+
+        '<div class="tag-left"><div>'+
+          '<div class="tag-title">Rasio Pembayaran terhadap Hutang Masuk</div>'+
+          '<div class="tag-sub">Seberapa besar pembayaran menutup pembelian (hutang baru) bulan yang sama?</div>'+
+        '</div></div>'+
+        '<div class="tag-meta" style="color:'+(avgRasio>=100?'#2e9e4e':'#c0392b')+';font-weight:700;">Avg '+avgRasio.toFixed(0)+'%</div>'+
+      '</div>'+
+      kpiHtml + chartHtml + tblHtml + narasiHtml;
+  }
+
+  function eDrawRasioChart(){
+    var svg = document.getElementById('rasio-chart-svg');
+    if(!svg) return;
+    var MN_SH2 = {
+      '2025-06':'Jun25','2025-07':'Jul25','2025-08':'Ags25','2025-09':'Sep25',
+      '2025-10':'Okt25','2025-11':'Nov25','2025-12':'Des25',
+      '2026-01':'Jan26','2026-02':'Feb26','2026-03':'Mar26','2026-04':'Apr26',
+      '2026-05':'Mei26','2026-06':'Jun26','2026-07':'Jul26'
+    };
+    var data = MN14.map(function(m){
+      var rasio = m.produk > 0 ? (m.bayar / m.produk * 100) : (m.bayar > 0 ? 999 : 0);
+      return { ym: m.ym, rasio: Math.min(rasio, 300), rasioAsli: rasio, produk: m.produk, bayar: m.bayar };
+    });
+
+    var W=720,H=240,pL=56,pR=14,pT=20,pB=36,plW=W-pL-pR,plH=H-pT-pB;
+    var n = data.length;
+    var barW = Math.min(plW/n*0.55, 32);
+    function xFor(i){ return pL+(i+0.5)*(plW/n); }
+    var maxV = Math.max.apply(null, data.map(function(d){return d.rasio;})) * 1.15 || 1;
+    function yFor(v){ return pT+plH-(v/maxV*plH); }
+
+    var grid='',glbl='';
+    for(var g=0;g<=4;g++){
+      var gv=maxV*g/4, gy=pT+plH-(g/4*plH);
+      grid+='<line class="grid-line" x1="'+pL+'" y1="'+gy+'" x2="'+(W-pR)+'" y2="'+gy+'"/>';
+      glbl+='<text class="axis-label" x="'+(pL-6)+'" y="'+(gy+3)+'" text-anchor="end">'+gv.toFixed(0)+'%</text>';
+    }
+
+    // Garis 100% (titik impas)
+    var line100Y = yFor(100);
+    var line100 = (100<=maxV) ? ('<line x1="'+pL+'" y1="'+line100Y+'" x2="'+(W-pR)+'" y2="'+line100Y+'" stroke="#5e7fa3" stroke-width="1.5" stroke-dasharray="4,3"/>'+
+      '<text x="'+(W-pR-2)+'" y="'+(line100Y-4)+'" text-anchor="end" font-size="8.5" font-family="var(--font-mono)" fill="#5e7fa3">100% (impas)</text>') : '';
+
+    var bars = data.map(function(d,i){
+      var x=xFor(i);
+      var by=yFor(d.rasio), bh=Math.max(2,pT+plH-by);
+      var color = d.rasioAsli>=100?'#2e9e4e':(d.rasioAsli>=60?'#b8621a':'#c0392b');
+      return '<rect class="rasio-bar" data-idx="'+i+'" x="'+(x-barW/2)+'" y="'+by+'" width="'+barW+'" height="'+bh+'" fill="'+color+'" fill-opacity="0.82" rx="3" style="cursor:pointer;"/>';
+    }).join('');
+
+    var xlbl = data.map(function(d,i){
+      return '<text class="axis-label" x="'+xFor(i)+'" y="'+(H-pB+14)+'" text-anchor="middle" font-size="8">'+eEsc(MN_SH2[d.ym]||d.ym)+'</text>';
+    }).join('');
+
+    svg.innerHTML = grid+glbl+line100+bars+xlbl;
+
+    var tip=document.getElementById('rasio-tip'), wrap=svg.parentElement;
+    var mFull = {'2025-06':'Juni 2025','2025-07':'Juli 2025','2025-08':'Agustus 2025','2025-09':'September 2025','2025-10':'Oktober 2025','2025-11':'November 2025','2025-12':'Desember 2025','2026-01':'Januari 2026','2026-02':'Februari 2026','2026-03':'Maret 2026','2026-04':'April 2026','2026-05':'Mei 2026','2026-06':'Juni 2026','2026-07':'Juli 2026'};
+    Array.prototype.forEach.call(svg.querySelectorAll('.rasio-bar'),function(bar){
+      bar.addEventListener('mousemove',function(e){
+        var idx=parseInt(bar.getAttribute('data-idx')), d=data[idx];
+        var rDisp = d.rasioAsli>=999 ? '&infin;' : d.rasioAsli.toFixed(1)+'%';
+        tip.innerHTML='<div class="t-date">'+(mFull[d.ym]||d.ym)+'</div>'+
+          '<div class="t-row"><span>Produk Masuk</span><span style="color:#c0392b;">'+eFmtF(d.produk)+'</span></div>'+
+          '<div class="t-row"><span>Pembayaran</span><span style="color:#2e9e4e;">'+eFmtF(d.bayar)+'</span></div>'+
+          '<div class="t-row"><span>Rasio</span><span style="font-weight:700;color:#d96b62;">'+rDisp+'</span></div>';
+        var rect=wrap.getBoundingClientRect(),tx=e.clientX-rect.left+12,ty=e.clientY-rect.top-10;
+        if(tx+180>rect.width) tx=e.clientX-rect.left-190;
+        tip.style.left=tx+'px';tip.style.top=ty+'px';tip.style.opacity='1';
+      });
+      bar.addEventListener('mouseleave',function(){tip.style.opacity='0';});
+    });
   }
 
   function eRenderMonthlyTable(){
@@ -5474,7 +5784,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
     var netPts = months.map(function(m,i){
       return [xFor(i), midY - (m.net/maxNet * plH * 0.3)];
     });
-    var netLine='<path d="'+eSmooth(netPts)+'" fill="none" stroke="#f0c040" stroke-width="2" stroke-dasharray="5,3"/>';
+    var netLine='<path d="'+eSmooth(netPts)+'" fill="none" stroke="#b8792a" stroke-width="2" stroke-dasharray="5,3"/>';
     netPts.forEach(function(pt,i){
       netLine+='<circle cx="'+pt[0]+'" cy="'+pt[1]+'" r="3.5" fill="'+(months[i].net>0?'#c0392b':'#2e9e4e')+'" stroke="#f8f3ec" stroke-width="1.5"/>';
     });
@@ -5486,7 +5796,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
 
     var legend='<text x="'+(pL+10)+'" y="'+(pT-4)+'" font-size="9" font-family="var(--font-mono)" fill="#d96b62">&#x25A0; Produk Masuk</text>'+
       '<text x="'+(pL+110)+'" y="'+(pT-4)+'" font-size="9" font-family="var(--font-mono)" fill="#2e9e4e">&#x25A0; Pembayaran</text>'+
-      '<text x="'+(pL+210)+'" y="'+(pT-4)+'" font-size="9" font-family="var(--font-mono)" fill="#f0c040">&#x2015; Net</text>';
+      '<text x="'+(pL+210)+'" y="'+(pT-4)+'" font-size="9" font-family="var(--font-mono)" fill="#b8792a">&#x2015; Net</text>';
 
     svg.innerHTML=grid+glbl+bars+netLine+xlbl+legend;
 
