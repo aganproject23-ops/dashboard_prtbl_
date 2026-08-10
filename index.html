@@ -332,6 +332,71 @@ td.down{ color:#c0392b; font-weight:600; }
 .map-zoom-reset{ font-size:13px; }
 .map-bubble{ cursor:pointer; transition: opacity .15s; }
 .map-bubble:hover{ opacity:0.8; }
+
+/* ===== LEAFLET MAP (Peta Distribusi Penjualan) ===== */
+.leaflet-map-box{
+  width:100%; height:440px; position:relative; border-radius:10px; overflow:hidden;
+  border:1px solid var(--line); background:#eee;
+}
+.leaflet-map-box.is-fullscreen{
+  position:fixed !important; top:0; left:0; width:100vw !important; height:100vh !important;
+  z-index:2500; border-radius:0; border:none;
+}
+#leaflet-map-el{ width:100%; height:100%; }
+.leaflet-map-box .leaflet-popup-content-wrapper{ border-radius:8px; }
+.map-fullscreen-btn{
+  position:absolute; top:10px; right:10px; z-index:1000;
+  width:34px; height:34px; border-radius:8px; border:1px solid var(--line);
+  background:#fff; color:#3e3028; font-size:15px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.25);
+}
+.map-fullscreen-btn:hover{ background:var(--accent); color:#fff; border-color:var(--accent); }
+.leaflet-city-tooltip{
+  font-family: var(--font-body); font-size:12.5px; line-height:1.6;
+}
+.leaflet-city-tooltip b{ font-size:13px; }
+.map-kpi-row{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px;
+}
+.map-kpi-card{
+  background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 14px;
+}
+.map-kpi-card .mk-label{ font-size:10.5px; color:#8a7e6e; text-transform:uppercase; letter-spacing:0.5px; }
+.map-kpi-card .mk-value{ font-size:17px; font-weight:700; color:#3e3028; margin-top:2px; }
+
+/* Drill-down modal */
+.city-modal-overlay{
+  display:none; position:fixed; inset:0; background:rgba(20,15,12,0.55);
+  z-index:3000; align-items:center; justify-content:center; padding:20px;
+}
+.city-modal-overlay.open{ display:flex; }
+.city-modal-box{
+  background:#fdfaf5; border-radius:12px; width:100%; max-width:640px; max-height:85vh;
+  overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.4); position:relative;
+}
+.city-modal-head{
+  padding:18px 22px 14px; border-bottom:1px solid var(--line); position:sticky; top:0;
+  background:#fdfaf5; z-index:2;
+}
+.city-modal-title{ font-family:var(--font-display); font-size:19px; font-weight:700; color:#2e2420; }
+.city-modal-sub{ font-size:12px; color:#8a7e6e; margin-top:2px; }
+.city-modal-close{
+  position:absolute; top:14px; right:16px; width:28px; height:28px; border-radius:50%;
+  border:none; background:#ede7db; color:#3e3028; font-size:16px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.city-modal-close:hover{ background:var(--accent); color:#fff; }
+.city-modal-tabs{ display:flex; gap:4px; padding:10px 22px 0; }
+.city-modal-tab{
+  padding:8px 14px; font-size:12.5px; font-weight:600; color:#8a7e6e; cursor:pointer;
+  border-bottom:2px solid transparent; user-select:none;
+}
+.city-modal-tab.active{ color:var(--accent); border-bottom-color:var(--accent); }
+.city-modal-body{ padding:16px 22px 22px; }
+.city-modal-panel{ display:none; }
+.city-modal-panel.active{ display:block; }
+
 .map-tooltip{
   position:absolute; background: var(--bg-2); border:1px solid var(--accent);
   border-radius:6px; padding:9px 11px; font-size:12px; pointer-events:none; opacity:0;
@@ -385,6 +450,8 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
 .insight-list li::before{ content:'▸'; position:absolute; left:0; color:#b8453d; }
 .insight-list li b{ color:#2e2420; font-weight:600; }
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
 <div class="app-shell">
@@ -1161,21 +1228,52 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
       '<div class="panel">' +
         '<div class="panel-head">' +
           '<div class="panel-title">Peta Distribusi Penjualan per Kota</div>' +
-          '<div class="panel-hint">ukuran lingkaran = total netto &middot; scroll/drag atau tombol untuk zoom</div>' +
+          '<div class="panel-hint">ukuran lingkaran = total netto &middot; klik marker/baris tabel untuk detail kota</div>' +
         '</div>' +
-        '<div class="map-svg-box" id="map-svg-box">' +
-          '<svg id="map-svg" viewBox="0 0 1180 460" preserveAspectRatio="xMidYMid meet" style="width:100%; height:auto; display:block; cursor:grab;"></svg>' +
-          '<div class="map-tooltip" id="map-tooltip"></div>' +
-          '<div class="map-zoom-controls">' +
-            '<button class="map-zoom-btn" id="map-zoom-in" type="button" title="Zoom in">+</button>' +
-            '<button class="map-zoom-btn" id="map-zoom-out" type="button" title="Zoom out">&minus;</button>' +
-            '<button class="map-zoom-btn map-zoom-reset" id="map-zoom-reset" type="button" title="Reset zoom">&#9678;</button>' +
-          '</div>' +
+        renderMapKpiRow(kotaSummary) +
+        '<div class="leaflet-map-box" id="leaflet-map-box">' +
+          '<div id="leaflet-map-el"></div>' +
+          '<button class="map-fullscreen-btn" id="map-fullscreen-btn" type="button" title="Fullscreen">&#9974;</button>' +
         '</div>' +
         '<div class="map-note">Top 8 kota/kab: ' + topKotas.map(function(p){return escapeHtml(truncate(p.name,20));}).join(' &middot; ') + unknownNote + '</div>' +
       '</div>' +
     '</div>' +
-    renderKotaTable(kotaSummary);
+    renderKotaTable(kotaSummary) +
+    renderCityDrillModal();
+  }
+
+  function renderMapKpiRow(kotaSummary){
+    var known = kotaSummary.filter(function(p){ return p.idx !== -1 && KOTA_COORDS[p.idx]; });
+    var totalNetto = known.reduce(function(s,p){return s+p.netto;},0);
+    var totalQty = known.reduce(function(s,p){return s+p.qty;},0);
+    var top = known.slice().sort(function(a,b){return b.netto-a.netto;})[0];
+    return '<div class="map-kpi-row">' +
+      '<div class="map-kpi-card"><div class="mk-label">Kota Terpetakan</div><div class="mk-value">'+known.length+'</div></div>' +
+      '<div class="map-kpi-card"><div class="mk-label">Total Netto</div><div class="mk-value">'+fmtIDR(totalNetto)+'</div></div>' +
+      '<div class="map-kpi-card"><div class="mk-label">Total Qty</div><div class="mk-value">'+fmtNum(totalQty)+' pcs</div></div>' +
+      '<div class="map-kpi-card"><div class="mk-label">Kota Tertinggi</div><div class="mk-value" style="font-size:13px;">'+(top?escapeHtml(truncate(top.name,18)):'&mdash;')+'</div></div>' +
+    '</div>';
+  }
+
+  function renderCityDrillModal(){
+    return '' +
+    '<div class="city-modal-overlay" id="city-modal-overlay">' +
+      '<div class="city-modal-box">' +
+        '<div class="city-modal-head">' +
+          '<div class="city-modal-title" id="city-modal-title">-</div>' +
+          '<div class="city-modal-sub" id="city-modal-sub">-</div>' +
+          '<button class="city-modal-close" id="city-modal-close" type="button">&times;</button>' +
+        '</div>' +
+        '<div class="city-modal-tabs">' +
+          '<div class="city-modal-tab active" data-tab="produk">Pareto Produk</div>' +
+          '<div class="city-modal-tab" data-tab="tren">Tren Bulanan</div>' +
+        '</div>' +
+        '<div class="city-modal-body">' +
+          '<div class="city-modal-panel active" id="city-modal-produk"></div>' +
+          '<div class="city-modal-panel" id="city-modal-tren"></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
   }
 
   function renderKotaTable(kotaSummary){
@@ -1199,7 +1297,7 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
     var kotaRowsHtml = kotaSorted.map(function(p, idx){
       var pct = maxKotaNetto ? (p.netto/maxKotaNetto*100) : 0;
       var share = totalKnownNetto ? (p.netto/totalKnownNetto*100) : 0;
-      return '<tr>' +
+      return '<tr class="kota-row-clickable" data-kota-idx="'+p.idx+'" style="cursor:pointer;">' +
         '<td><span class="rank">#'+(idx+1)+'</span></td>' +
         '<td class="prod-name"><span class="prod-name-text" title="'+escapeAttr(p.name)+'">'+escapeHtml(p.name)+'</span>' +
           '<div class="bar-mini"><div class="bar-mini-fill" style="width:'+pct.toFixed(1)+'%; background:var(--accent-2);"></div></div>' +
@@ -1642,190 +1740,228 @@ footer{ text-align:center; color: var(--mute); font-size:11px; font-family: var(
   }
 
   // ---------- MAP DRAW ----------
-  function drawMap(kotaSummary){
-    var svg = document.getElementById('map-svg');
-    if (!svg) return;
-    var W = 1180, H = 460;
+  // ===================================================================
+  // LEAFLET MAP — Peta Distribusi Penjualan per Kota (interaktif, OSM)
+  // ===================================================================
+  var leafletMapInstance = null;
+  var leafletMarkersLayer = null;
+  var lastKotaSummaryForMap = [];
 
-    var known = kotaSummary.filter(function(p){ return p.idx !== -1 && p.idx !== undefined; });
+  function drawMap(kotaSummary){
+    lastKotaSummaryForMap = kotaSummary;
+    var container = document.getElementById('leaflet-map-el');
+    if (!container || typeof L === 'undefined') return;
+
+    // Selalu destroy instance lama sebelum membuat yang baru (mencegah leaflet menumpuk)
+    if (leafletMapInstance){
+      leafletMapInstance.remove();
+      leafletMapInstance = null;
+    }
+
+    var known = kotaSummary.filter(function(p){ return p.idx !== -1 && p.idx !== undefined && KOTA_COORDS[p.idx]; });
+
+    var map = L.map(container, { scrollWheelZoom: true }).setView([-2.5, 118], 5);
+    leafletMapInstance = map;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
     if (!known.length){
-      svg.innerHTML = '<text x="'+(W/2)+'" y="'+(H/2)+'" text-anchor="middle" fill="var(--mute)" font-family="var(--font-mono)" font-size="13">Tidak ada data wilayah</text>';
       return;
     }
 
-    // Indonesia bounding box approx: lat -11 to 6, lng 95 to 141
-    var latMin=-11, latMax=6.5, lngMin=94.5, lngMax=141.5;
-    var padX=20, padY=20;
-    function project(lat, lng){
-      var x = padX + (lng-lngMin)/(lngMax-lngMin) * (W-2*padX);
-      var y = padY + (latMax-lat)/(latMax-latMin) * (H-2*padY);
-      return [x,y];
-    }
+    var maxNetto = Math.max.apply(null, known.map(function(p){ return p.netto; }));
+    var palette = ['#d96b62','#5e7fa3','#2e9e4e','#8b5cf6','#e67e22','#0ea5e9','#c0392b','#8a6000'];
 
-    var maxNetto = Math.max.apply(null, known.map(function(p){return p.netto;}));
-    var minR = 3, maxR = 26;
-
-    var bg = '<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#f5f0ea" rx="8"/>';
-
-    var grid = '';
-    for (var lng=95; lng<=140; lng+=15){
-      var p1 = project(latMin, lng), p2 = project(latMax, lng);
-      grid += '<line x1="'+p1[0]+'" y1="'+p1[1]+'" x2="'+p2[0]+'" y2="'+p2[1]+'" stroke="#ddd4c2" stroke-width="1" stroke-dasharray="2,4"/>';
-    }
-    for (var lat=-10; lat<=5; lat+=5){
-      var p1b = project(lat, lngMin), p2b = project(lat, lngMax);
-      grid += '<line x1="'+p1b[0]+'" y1="'+p1b[1]+'" x2="'+p2b[0]+'" y2="'+p2b[1]+'" stroke="var(--line)" stroke-width="1" stroke-dasharray="2,4"/>';
-    }
-
-    // sort descending by netto so smaller bubbles draw on top of larger ones (better hover access)
     var sortedKnown = known.slice().sort(function(a,b){ return b.netto - a.netto; });
+    var markerByIdx = {};
 
-    var bubbles = '';
-    var labels = '';
     sortedKnown.forEach(function(p, i){
       var coords = KOTA_COORDS[p.idx];
       if (!coords) return;
-      var xy = project(coords[0], coords[1]);
-      var r = minR + Math.sqrt(p.netto/maxNetto) * (maxR-minR);
-      var isTop = i < 6;
-      bubbles += '<circle class="map-bubble" cx="'+xy[0]+'" cy="'+xy[1]+'" r="'+r+'" ' +
-        'fill="var(--accent)" fill-opacity="0.5" stroke="var(--accent-2)" stroke-width="1.3" ' +
-        'data-name="'+escapeAttr(p.name)+'" data-netto="'+p.netto+'" data-qty="'+p.qty+'"/>';
-      if (isTop){
-        labels += '<text x="'+xy[0]+'" y="'+(xy[1]-r-5)+'" text-anchor="middle" class="axis-label" font-size="10" font-weight="600" fill="var(--paper-dim)">'+escapeHtml(truncate(p.name,18))+'</text>';
-      }
-    });
+      var radius = Math.max(5, Math.round(Math.sqrt(p.netto / maxNetto) * 24));
+      var color = palette[i % palette.length];
 
-    var z = state.mapZoom;
-    var tx = state.mapPanX, ty = state.mapPanY;
-    svg.innerHTML = '<g id="map-zoom-group" transform="translate('+tx+','+ty+') scale('+z+')">' + bg + grid + bubbles + labels + '</g>';
+      var marker = L.circleMarker([coords[0], coords[1]], {
+        radius: radius,
+        color: color,
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 0.55
+      }).addTo(map);
 
-    var tooltip = document.getElementById('map-tooltip');
-    var box = svg.parentElement;
-    Array.prototype.forEach.call(svg.querySelectorAll('.map-bubble'), function(bubble){
-      bubble.addEventListener('mousemove', function(e){
-        var name = bubble.getAttribute('data-name');
-        var netto = parseFloat(bubble.getAttribute('data-netto'));
-        var qty = parseFloat(bubble.getAttribute('data-qty'));
-        tooltip.innerHTML = '<div class="t-date">' + escapeHtml(name) + '</div>' +
-          '<div class="t-row"><span>Netto</span><span>'+fmtIDRFull(netto)+'</span></div>' +
-          '<div class="t-row"><span>Qty</span><span>'+fmtNum(qty)+' pcs</span></div>';
-        var rect = box.getBoundingClientRect();
-        var ttx = e.clientX - rect.left + 12;
-        var tty = e.clientY - rect.top - 10;
-        tooltip.style.left = ttx + 'px';
-        tooltip.style.top = tty + 'px';
-        tooltip.style.opacity = '1';
+      var tooltipHtml = '<div class="leaflet-city-tooltip"><b>' + escapeHtml(p.name) + '</b><br>' +
+        'Netto: ' + fmtIDRFull(p.netto) + '<br>' +
+        'Qty: ' + fmtNum(p.qty) + ' pcs</div>';
+      marker.bindTooltip(tooltipHtml, { sticky: true });
+
+      marker.on('click', function(){
+        openCityDrillModal(p.idx, p.name);
       });
-      bubble.addEventListener('mouseleave', function(){ tooltip.style.opacity = '0'; });
+
+      markerByIdx[p.idx] = marker;
     });
 
-    attachMapZoomEvents(svg);
+    window.__leafletMarkerByIdx = markerByIdx;
+    window.__leafletMapInstance = map;
+
+    setTimeout(function(){ if (leafletMapInstance) leafletMapInstance.invalidateSize(); }, 80);
+
+    attachMapFullscreenEvents();
+    attachKotaTableClickEvents();
   }
 
-  var ZOOM_MIN = 1, ZOOM_MAX = 6, ZOOM_STEP = 0.35;
-
-  function clampZoom(z){
-    return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+  function attachMapFullscreenEvents(){
+    var btn = document.getElementById('map-fullscreen-btn');
+    var box = document.getElementById('leaflet-map-box');
+    if (!btn || !box || btn.__attached) return;
+    btn.__attached = true;
+    btn.addEventListener('click', function(){
+      box.classList.toggle('is-fullscreen');
+      btn.innerHTML = box.classList.contains('is-fullscreen') ? '&#10005;' : '&#9974;';
+      // Transisi fullscreen browser butuh waktu render ulang; invalidateSize beberapa kali dengan delay
+      [50, 150, 300, 500].forEach(function(delay){
+        setTimeout(function(){ if (leafletMapInstance) leafletMapInstance.invalidateSize(); }, delay);
+      });
+    });
   }
 
-  // Re-applies the current zoom/pan transform to the map's <g> wrapper
-  // without rebuilding the whole SVG (cheap, used during drag/wheel).
-  function applyMapTransform(){
-    var g = document.getElementById('map-zoom-group');
-    if (!g) return;
-    g.setAttribute('transform', 'translate('+state.mapPanX+','+state.mapPanY+') scale('+state.mapZoom+')');
+  function attachKotaTableClickEvents(){
+    var rows = document.querySelectorAll('.kota-row-clickable');
+    Array.prototype.forEach.call(rows, function(row){
+      if (row.__attached) return;
+      row.__attached = true;
+      row.addEventListener('click', function(){
+        var idx = parseInt(row.getAttribute('data-kota-idx'), 10);
+        if (idx === -1 || isNaN(idx)) return;
+        var name = KOTAS[idx];
+        // Highlight marker di peta + buka modal
+        var marker = window.__leafletMarkerByIdx && window.__leafletMarkerByIdx[idx];
+        if (marker && window.__leafletMapInstance){
+          window.__leafletMapInstance.panTo(marker.getLatLng());
+          marker.openTooltip();
+        }
+        openCityDrillModal(idx, name);
+      });
+    });
   }
 
-  function zoomMapBy(delta, focalXRatio, focalYRatio){
-    var oldZoom = state.mapZoom;
-    var newZoom = clampZoom(oldZoom + delta);
-    if (newZoom === oldZoom) return;
-    // keep the point under the focal ratio (0..1 of the viewBox) stationary while zooming
-    var W = 1180, H = 460;
-    var fx = (focalXRatio!=null ? focalXRatio : 0.5) * W;
-    var fy = (focalYRatio!=null ? focalYRatio : 0.5) * H;
-    // world coordinate under the focal point before zoom change
-    var worldX = (fx - state.mapPanX) / oldZoom;
-    var worldY = (fy - state.mapPanY) / oldZoom;
-    state.mapZoom = newZoom;
-    state.mapPanX = fx - worldX * newZoom;
-    state.mapPanY = fy - worldY * newZoom;
-    applyMapTransform();
+  // ===== DRILL-DOWN MODAL: Pareto Produk & Tren Bulanan per Kota =====
+  function openCityDrillModal(kotaIdx, kotaName){
+    var overlay = document.getElementById('city-modal-overlay');
+    if (!overlay) return;
+
+    document.getElementById('city-modal-title').textContent = kotaName;
+
+    var filteredKotaRows = getFilteredKotaRows().filter(function(r){ return r[2] === kotaIdx; });
+    var totalNetto = filteredKotaRows.reduce(function(s,r){ return s + r[4]; }, 0);
+    var totalQty = filteredKotaRows.reduce(function(s,r){ return s + r[3]; }, 0);
+    document.getElementById('city-modal-sub').textContent =
+      fmtIDRFull(totalNetto) + ' netto \u00b7 ' + fmtNum(totalQty) + ' pcs terjual pada periode terpilih';
+
+    renderCityParetoProduk(filteredKotaRows);
+    renderCityTrenBulanan(filteredKotaRows);
+
+    overlay.classList.add('open');
+
+    // Tab switching (attach once)
+    if (!overlay.__tabsAttached){
+      overlay.__tabsAttached = true;
+      Array.prototype.forEach.call(overlay.querySelectorAll('.city-modal-tab'), function(tab){
+        tab.addEventListener('click', function(){
+          Array.prototype.forEach.call(overlay.querySelectorAll('.city-modal-tab'), function(t){ t.classList.remove('active'); });
+          Array.prototype.forEach.call(overlay.querySelectorAll('.city-modal-panel'), function(p){ p.classList.remove('active'); });
+          tab.classList.add('active');
+          document.getElementById('city-modal-' + tab.getAttribute('data-tab')).classList.add('active');
+        });
+      });
+      document.getElementById('city-modal-close').addEventListener('click', closeCityDrillModal);
+      overlay.addEventListener('click', function(e){
+        if (e.target === overlay) closeCityDrillModal();
+      });
+    }
   }
 
-  function resetMapZoom(){
-    state.mapZoom = 1;
-    state.mapPanX = 0;
-    state.mapPanY = 0;
-    applyMapTransform();
+  function closeCityDrillModal(){
+    var overlay = document.getElementById('city-modal-overlay');
+    if (overlay) overlay.classList.remove('open');
   }
 
-  function attachMapZoomEvents(svg){
-    var box = document.getElementById('map-svg-box');
-    if (!box) return;
+  function renderCityParetoProduk(rows){
+    var map = {};
+    rows.forEach(function(r){
+      var name = PRODUCTS[r[1]];
+      if (!map[name]) map[name] = { name: name, qty: 0, netto: 0 };
+      map[name].qty += r[3];
+      map[name].netto += r[4];
+    });
+    var list = Object.values(map).sort(function(a,b){ return b.netto - a.netto; }).slice(0, 10);
+    var maxNetto = list.length ? list[0].netto : 1;
 
-    var isDragging = false;
-    var dragStartX = 0, dragStartY = 0;
-    var panStartX = 0, panStartY = 0;
-
-    function svgPointRatio(clientX, clientY){
-      var rect = svg.getBoundingClientRect();
-      return {
-        x: (clientX - rect.left) / rect.width,
-        y: (clientY - rect.top) / rect.height
-      };
+    if (!list.length){
+      document.getElementById('city-modal-produk').innerHTML = '<div class="empty-state">Tidak ada data produk untuk kota ini pada periode terpilih.</div>';
+      return;
     }
 
-    svg.addEventListener('wheel', function(e){
-      e.preventDefault();
-      var ratio = svgPointRatio(e.clientX, e.clientY);
-      var delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-      zoomMapBy(delta, ratio.x, ratio.y);
-    }, { passive: false });
+    var bars = list.map(function(p){
+      var pct = maxNetto ? (p.netto / maxNetto * 100) : 0;
+      return '<div style="margin-bottom:9px;">' +
+        '<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;">' +
+          '<span style="color:#3e3028;">' + escapeHtml(truncate(p.name, 34)) + '</span>' +
+          '<span style="color:#8a7e6e; font-family:var(--font-mono);">' + fmtIDRFull(p.netto) + '</span>' +
+        '</div>' +
+        '<div style="height:9px; background:#ede7db; border-radius:4px;">' +
+          '<div style="height:100%; width:' + pct.toFixed(1) + '%; background:var(--accent); border-radius:4px;"></div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
 
-    svg.addEventListener('mousedown', function(e){
-      isDragging = true;
-      dragStartX = e.clientX; dragStartY = e.clientY;
-      panStartX = state.mapPanX; panStartY = state.mapPanY;
-      svg.style.cursor = 'grabbing';
-    });
-    window.addEventListener('mousemove', function(e){
-      if (!isDragging) return;
-      var rect = svg.getBoundingClientRect();
-      var scaleFactor = 1180 / rect.width; // viewBox units per CSS pixel
-      state.mapPanX = panStartX + (e.clientX - dragStartX) * scaleFactor;
-      state.mapPanY = panStartY + (e.clientY - dragStartY) * scaleFactor;
-      applyMapTransform();
-    });
-    window.addEventListener('mouseup', function(){
-      if (isDragging){ isDragging = false; svg.style.cursor = 'grab'; }
-    });
+    var rowsHtml = list.map(function(p, i){
+      return '<tr><td>#' + (i+1) + '</td><td>' + escapeHtml(truncate(p.name, 30)) + '</td>' +
+        '<td class="num">' + fmtNum(p.qty) + '</td><td class="num">' + fmtIDRFull(p.netto) + '</td></tr>';
+    }).join('');
 
-    // touch support (single-finger pan)
-    svg.addEventListener('touchstart', function(e){
-      if (e.touches.length !== 1) return;
-      isDragging = true;
-      dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
-      panStartX = state.mapPanX; panStartY = state.mapPanY;
-    }, { passive: true });
-    svg.addEventListener('touchmove', function(e){
-      if (!isDragging || e.touches.length !== 1) return;
-      var rect = svg.getBoundingClientRect();
-      var scaleFactor = 1180 / rect.width;
-      state.mapPanX = panStartX + (e.touches[0].clientX - dragStartX) * scaleFactor;
-      state.mapPanY = panStartY + (e.touches[0].clientY - dragStartY) * scaleFactor;
-      applyMapTransform();
-    }, { passive: true });
-    svg.addEventListener('touchend', function(){ isDragging = false; });
+    document.getElementById('city-modal-produk').innerHTML =
+      '<div style="margin-bottom:16px;">' + bars + '</div>' +
+      '<table style="width:100%; font-size:12px; border-collapse:collapse;">' +
+        '<thead><tr style="color:#8a7e6e; text-align:left;"><th>#</th><th>Produk</th><th class="num">Qty</th><th class="num">Netto</th></tr></thead>' +
+        '<tbody>' + rowsHtml + '</tbody>' +
+      '</table>';
+  }
 
-    var btnIn = document.getElementById('map-zoom-in');
-    var btnOut = document.getElementById('map-zoom-out');
-    var btnReset2 = document.getElementById('map-zoom-reset');
-    if (btnIn) btnIn.addEventListener('click', function(){ zoomMapBy(ZOOM_STEP, 0.5, 0.5); });
-    if (btnOut) btnOut.addEventListener('click', function(){ zoomMapBy(-ZOOM_STEP, 0.5, 0.5); });
-    if (btnReset2) btnReset2.addEventListener('click', function(){ resetMapZoom(); });
+  function renderCityTrenBulanan(rows){
+    var map = {};
+    rows.forEach(function(r){
+      var d = offsetToDate(r[0]);
+      var ym = dateToYM(d);
+      if (!map[ym]) map[ym] = { ym: ym, qty: 0, netto: 0 };
+      map[ym].qty += r[3];
+      map[ym].netto += r[4];
+    });
+    var list = Object.values(map).sort(function(a,b){ return a.ym < b.ym ? -1 : 1; });
+
+    if (!list.length){
+      document.getElementById('city-modal-tren').innerHTML = '<div class="empty-state">Tidak ada data tren untuk kota ini pada periode terpilih.</div>';
+      return;
+    }
+
+    var maxNetto = Math.max.apply(null, list.map(function(m){ return m.netto; }));
+    var bars = list.map(function(m){
+      var pct = maxNetto ? (m.netto / maxNetto * 100) : 0;
+      return '<div style="margin-bottom:9px;">' +
+        '<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;">' +
+          '<span style="color:#3e3028;">' + escapeHtml(m.ym) + '</span>' +
+          '<span style="color:#8a7e6e; font-family:var(--font-mono);">' + fmtIDRFull(m.netto) + ' &middot; ' + fmtNum(m.qty) + ' pcs</span>' +
+        '</div>' +
+        '<div style="height:9px; background:#ede7db; border-radius:4px;">' +
+          '<div style="height:100%; width:' + pct.toFixed(1) + '%; background:#5e7fa3; border-radius:4px;"></div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('city-modal-tren').innerHTML = bars;
   }
 
   // ---------- EVENTS ----------
